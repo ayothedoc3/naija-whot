@@ -74,7 +74,7 @@ A single `SECURITY DEFINER` Postgres function that, in one transaction:
 `REVOKE EXECUTE ON FUNCTION commit_game_transition FROM PUBLIC, anon,
 authenticated;` — it is only ever called by server code using the
 service-role client (see `src/lib/supabase/service-role.ts`). See migration
-`0004_commit_game_transition.sql`.
+`0005_commit_game_transition.sql`.
 
 ## Row Level Security
 

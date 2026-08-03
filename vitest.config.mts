@@ -19,6 +19,9 @@ export default defineConfig({
         "**/*.config.*",
       ],
     },
+    // Integration tests are always discovered but self-skip at runtime via
+    // RUN_SUPABASE_INTEGRATION_TESTS (see src/test/integration/) so `pnpm test`
+    // stays hermetic without needing a separate Vitest config.
     exclude: ["node_modules/**", ".next/**", "playwright/**", "e2e/**"],
   },
   resolve: {

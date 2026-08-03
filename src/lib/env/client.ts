@@ -1,10 +1,15 @@
-import "client-only";
 import { z } from "zod";
 
 /**
  * Public environment variables only. Next.js inlines `NEXT_PUBLIC_*` values at
  * build time, so each one must be referenced as a static `process.env.X`
  * member expression below — never through a dynamic key.
+ *
+ * Deliberately NOT guarded with the `client-only` package: these values are
+ * non-secret by design and are read from server contexts too (Server
+ * Components, Route Handlers, and Edge Middleware all need
+ * NEXT_PUBLIC_SUPABASE_URL, for example). `server.ts` in this folder is the
+ * one guarded with `server-only`, for the values that actually are secret.
  */
 const clientEnvSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url(),

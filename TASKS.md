@@ -30,14 +30,18 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 3 — Supabase
 
-- [ ] Migrations: profiles, rooms, room_members, games, game_secret_states,
-      game_events, processed_game_actions
-- [ ] RLS policies for every table
-- [ ] `commit_game_transition` SQL function, execute revoked from anon/authenticated
-- [ ] Anonymous auth wiring (client + server), profile creation trigger
-- [ ] Local Supabase stack via Docker CLI, migrations applied and verified
-- [ ] Security tests (RLS: cross-room access denied, secret state unreadable, etc.)
-- **Acceptance:** local `supabase start` + migrations apply cleanly; RLS tests pass.
+- [x] Migrations: profiles, rooms, room_members, games, game_secret_states,
+      game_events, processed_game_actions (8 migrations, `supabase/migrations/0001`–`0008`)
+- [x] RLS policies for every table + explicit table-level GRANTs (this Supabase image no
+      longer auto-exposes new tables — discovered and fixed via real testing, not assumed)
+- [x] `commit_game_transition` + `create_game` SQL functions, execute revoked from anon/authenticated
+- [x] Anonymous auth wiring (`src/lib/auth/session.ts`, `src/proxy.ts` for cookie refresh),
+      profile creation trigger (`handle_new_auth_user`)
+- [x] Local Supabase stack via Docker CLI, migrations applied and verified
+- [x] Security tests (RLS: cross-room access denied, secret state unreadable, RPC unreachable
+      by clients, replay/version-conflict rejected) — `src/test/integration/security.integration.test.ts`,
+      10/10 passing against the real local stack via `pnpm test:integration`
+- **Acceptance:** local `supabase start` + migrations apply cleanly; RLS tests pass. **DONE.**
 
 ## Phase 4 — Lobby
 
