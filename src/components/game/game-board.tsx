@@ -10,6 +10,7 @@ import type { Card as WhotCard, RequestableShape, Shape } from "@/lib/game-engin
 import type { RuleConfig } from "@/lib/game-engine/rules";
 import type { PublicGameState } from "@/lib/game-engine/public-state";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
+import { sound } from "@/lib/sound";
 import { CardBack } from "./card-back";
 import { CardFace } from "./card-face";
 import { PlayerSeat } from "./player-seat";
@@ -54,6 +55,7 @@ export function GameBoard({
   const [now, setNow] = useState(0);
   const [roundScores, setRoundScores] = useState<Record<string, number> | null>(null);
   const triedTimeoutForDeadline = useRef<number | null>(null);
+  const previousIsMyTurn = useRef<boolean | null>(null);
 
   const nameByUserId = useMemo(() => {
     const map = new Map<string, string>();
@@ -127,6 +129,8 @@ export function GameBoard({
             if (scores && typeof scores === "object") {
               setRoundScores(scores as Record<string, number>);
             }
+            if (evt.public_payload.winnerUserId === currentUserId) sound.roundWin();
+            else sound.roundLose();
           }
           announceEvent(evt.event_type, evt.public_payload, nameByUserId, currentUserId);
         },
@@ -170,10 +174,14 @@ export function GameBoard({
             await loadPublicState();
             await loadHand();
           } else {
+            sound.error();
             toast.error(data.error?.message ?? "That didn't work.");
           }
           return;
         }
+        const actionType = action.type;
+        if (actionType === "play_card" || actionType === "play_multi") sound.cardPlay();
+        else if (actionType === "draw_card" || actionType === "accept_penalty") sound.cardDraw();
         setPublicState(data.publicState);
         setHand(data.hand);
         setSelectedCardIds([]);
@@ -181,6 +189,7 @@ export function GameBoard({
         setDeclareCheckUp(false);
         setReverseDirection(false);
       } catch {
+        sound.error();
         toast.error("Network error — please try again.");
       } finally {
         setBusy(false);
@@ -237,6 +246,14 @@ export function GameBoard({
         }
       });
   }, [now, publicState, gameId, loadHand]);
+
+  useEffect(() => {
+    const isMine = publicState?.currentPlayerUserId === currentUserId;
+    if (isMine && previousIsMyTurn.current === false) {
+      sound.yourTurn();
+    }
+    previousIsMyTurn.current = isMine;
+  }, [publicState?.currentPlayerUserId, currentUserId]);
 
   if (!publicState) {
     return (
@@ -420,7 +437,12 @@ export function GameBoard({
           </div>
         )}
 
-        <p data-testid="turn-indicator" className="text-cream text-sm font-medium">
+        <p
+          data-testid="turn-indicator"
+          role="status"
+          aria-live="polite"
+          className="text-cream text-sm font-medium"
+        >
           {isMyTurn
             ? "Your turn"
             : `${nameByUserId.get(publicState.currentPlayerUserId ?? "") ?? "Opponent"}'s turn`}
@@ -521,10 +543,15 @@ function announceEvent(
       toast.info(`${nameOf(payload.actorUserId)} called General Market.`);
       break;
     case "last_card_penalty":
+      sound.penalty();
       toast.warning(`${nameOf(payload.actorUserId)} forgot to declare Last Card — drew 2.`);
       break;
     case "check_up_penalty":
+      sound.penalty();
       toast.warning(`${nameOf(payload.actorUserId)} forgot to declare Check Up — drew 2.`);
+      break;
+    case "penalty_applied":
+      if (isMe(payload.targetUserId)) sound.penalty();
       break;
     case "turn_timeout":
       toast.info(`${nameOf(payload.previousPlayerUserId)}'s turn timed out.`);

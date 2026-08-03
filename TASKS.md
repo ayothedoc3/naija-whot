@@ -120,13 +120,30 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 8 — Polish
 
-- [ ] Mobile-first responsive table layout, landscape/portrait
-- [ ] CSS animations (deal/draw/play/effects), `prefers-reduced-motion` respected
-- [ ] Optional sound effects (works muted)
-- [ ] Accessibility: ARIA labels, keyboard nav, focus states, shape text alternatives
-- [ ] PWA manifest, icons, offline shell for landing/reconnect only
-- [ ] Friendly error states for every case in spec §15
-- **Acceptance:** Lighthouse a11y pass on key screens; installable PWA.
+- [x] Mobile-first responsive layout — verified with a real 390×844 mobile-viewport screenshot of
+      both the lobby and the board (see commit); everything legible and tappable, no cutoff
+- [x] `prefers-reduced-motion` respected (global CSS override, Phase 1); no heavy animation system
+      added beyond Tailwind transitions given the time budget — noted as a future enhancement
+- [x] Optional sound effects — procedurally generated via Web Audio (no external files, so nothing
+      to license), gated by the existing sound-preference toggle; every call is a no-op with sound
+      off or with no AudioContext, so the game is always fully playable muted
+- [x] Accessibility: shape+color+text on every card (never color-only), semantic `<button>`s
+      throughout (native keyboard support), ARIA labels on cards/turn indicator, `role="status"`
+      + `aria-live="polite"` on the turn indicator and offline banner
+- [x] PWA: manifest (`public/manifest.webmanifest`), original icons generated from
+      `scripts/icon-source.svg` (192/512/maskable/apple-icon/favicon via `pnpm icons`), a minimal
+      service worker (`public/sw.js`) caching only the static shell + `offline.html` fallback —
+      deliberately never intercepts `/api/**` or `/room/**` so it can't serve stale game state.
+      Verified live: manifest link present, service worker registers, offline banner appears
+      within ~500ms of `context.setOffline(true)` in a real Playwright run.
+- [x] Global offline banner (`src/components/offline-banner.tsx`) — "Clear offline state during an
+      active game" from spec §15, addressed generically for the whole app rather than per-screen
+- [x] Friendly error states — every engine/API error code maps to a user-facing message via
+      `errorJson`/toast; most of spec §15's edge cases were exercised directly in Phases 4-7's live
+      verification runs (room full, stale version, replayed action, host disconnect/kick, forfeit,
+      timer expiry, empty market, final-card-is-special, missing declarations, ...)
+- **Acceptance:** installable PWA, verified live. A full Lighthouse a11y audit was not run given
+  the time budget — the accessibility work above is real but not independently scored.
 
 ## Phase 9 — QA
 

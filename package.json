@@ -20,7 +20,8 @@
     "supabase:start": "supabase start",
     "supabase:stop": "supabase stop",
     "supabase:reset": "supabase db reset",
-    "supabase:types": "supabase gen types typescript --local | grep -v '^Connecting to db' > src/lib/supabase/database.types.ts"
+    "supabase:types": "supabase gen types typescript --local | grep -v '^Connecting to db' > src/lib/supabase/database.types.ts",
+    "icons": "node scripts/generate-icons.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -57,6 +58,7 @@
     "jsdom": "^30.0.1",
     "prettier": "^3.9.6",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "sharp": "^0.35.3",
     "supabase": "^2.111.0",
     "tailwindcss": "^4",
     "tsx": "^4.23.1",
