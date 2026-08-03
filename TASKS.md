@@ -98,14 +98,17 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 10 — CI + deployment
 
-- [ ] GitHub Actions: install, format check, lint, typecheck, unit tests, build, docker build
-- [ ] Multi-stage `Dockerfile` (standalone output), `.dockerignore`, `/api/health`
-- [ ] `compose.yaml` for local dev/integration only (not required for prod)
+- [x] GitHub Actions: install, format check, lint, typecheck, unit tests, build, docker build
+- [x] Multi-stage `Dockerfile` (standalone output), `.dockerignore`, `/api/health`
+- [x] `compose.yaml` for local dev/integration only (not required for prod)
 - [ ] README with exact Supabase + Coolify steps
-- [ ] Production env validation (build-time vs runtime vars documented)
+- [x] Production env validation (build-time vs runtime vars documented)
 - **Acceptance:** `docker build` + `docker run` serve the app locally and `/api/health` returns 200.
-  Actual Coolify deployment requires the user's own Coolify instance/account — documented as a
-  manual step, not claimed as completed by this session unless a live URL is verified.
+  **Verified** at the end of Phase 2 against the current (pre-Supabase) app state — image builds,
+  container runs as non-root on 0.0.0.0:3000, health check returns 200 with security headers.
+  Will re-verify once Supabase wiring lands. Actual Coolify deployment requires the user's own
+  Coolify instance/account — documented as a manual step, not claimed as completed by this session
+  unless a live URL is verified.
 
 ---
 
