@@ -61,11 +61,24 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 5 — Multiplayer board
 
-- [ ] Route handlers for start/play/draw/etc. via engine + `commit_game_transition`
-- [ ] Realtime subscriptions (public game state, events) replace-not-merge
-- [ ] Player's private hand fetch endpoint
-- [ ] Reconnect: refresh restores game, presence shows reconnecting
-- **Acceptance:** full turn cycle works live across two clients; refresh recovers state.
+- [x] Generic `POST /api/games/[gameId]/actions` handler — every action type goes through the
+      pure engine then `commit_game_transition`; no rule logic in the route itself
+- [x] Realtime subscriptions (public game state, events); `state_version` guard so out-of-order
+      Realtime delivery can never overwrite a newer snapshot with a stale one
+- [x] `GET /api/games/[gameId]/hand` — the only place a player's own cards are ever returned
+- [x] Full original card UI (`CardFace`/`CardBack`, color+icon+text so it's never color-only),
+      player seats, market/discard piles, Whot shape selector, turn timer, declare-toggle buttons
+- [x] Round/match result overlay + rematch voting (pulled forward from Phase 7 — needed so a
+      finished round doesn't dead-end the board)
+- **Acceptance:** full turn cycle works live across two clients; refresh recovers state. **DONE —
+  verified with a real ~100-turn two-browser-context Playwright playthrough** (see commit):
+  penalty stacking, Whot shape selection, Last Card/Check Up declarations, market reshuffling,
+  round end, and rematch all exercised through the actual UI against the real local Supabase
+  stack, both clients agreeing on the winner. Caught and fixed two real bugs this way: (1)
+  `RoomClient` excluded `match_over` games when picking the "active" game, so finishing a match
+  bounced both clients back to the pre-game lobby instead of showing the result screen; (2) a
+  `VERSION_CONFLICT` from two players acting near-simultaneously (e.g. both clicking "ready for
+  rematch") was silently dropped instead of retried, per the architecture doc's own stated design.
 
 ## Phase 6 — Complete rules
 

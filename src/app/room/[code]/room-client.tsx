@@ -87,11 +87,15 @@ export function RoomClient({ code }: { code: string }) {
       .order("seat_number", { ascending: true });
     setMembers((memberRows as RoomMemberRow[]) ?? []);
 
+    // Deliberately not filtered by status: once a room has ever started a
+    // game, it stays on the board view for the lifetime of that game row —
+    // including match_over (showing the result/rematch overlay) — rather
+    // than bouncing back to the pre-game lobby UI. A fresh match reuses the
+    // same room and the same game id (see start_rematch in the engine).
     const { data: gameRow } = await supabase
       .from("games")
       .select("id, status")
       .eq("room_id", roomRow.id)
-      .neq("status", "match_over")
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -313,6 +317,9 @@ export function RoomClient({ code }: { code: string }) {
         gameId={activeGameId}
         currentUserId={currentUserId ?? ""}
         roomCode={room.code}
+        ruleConfig={room.settings}
+        players={members.map((m) => ({ userId: m.user_id, displayName: m.display_name }))}
+        onlineUserIds={onlineUserIds}
       />
     );
   }
