@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
 import { OfflineBanner } from "@/components/offline-banner";
 import { ServiceWorkerRegister } from "@/components/sw-register";
+import { DevFixtureBadge } from "@/components/dev-fixture-badge";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -57,6 +58,7 @@ export default function RootLayout({
           {children}
           <Toaster position="top-center" richColors closeButton />
           <ServiceWorkerRegister />
+          <DevFixtureBadge />
         </TooltipProvider>
       </body>
     </html>

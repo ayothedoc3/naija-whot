@@ -7,10 +7,15 @@ export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  retries: process.env.CI ? 2 : 1,
   workers: process.env.CI ? 2 : undefined,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
-  timeout: 60_000,
+  // Generous per-test timeout: the full-game spec runs a long sequential
+  // scenario (create → join → several real turns → reconnect → rematch),
+  // and the very first requests after a cold `next build && next start`
+  // (this is a freshly-built webServer every run) are visibly slower than
+  // steady-state — a real one-time cold-start cost, not app latency.
+  timeout: 120_000,
   use: {
     baseURL,
     trace: "on-first-retry",

@@ -56,6 +56,7 @@ export function GameBoard({
   const [roundScores, setRoundScores] = useState<Record<string, number> | null>(null);
   const triedTimeoutForDeadline = useRef<number | null>(null);
   const previousIsMyTurn = useRef<boolean | null>(null);
+  const handRequestId = useRef(0);
 
   const nameByUserId = useMemo(() => {
     const map = new Map<string, string>();
@@ -75,10 +76,20 @@ export function GameBoard({
   }, [gameId, supabase]);
 
   const loadHand = useCallback(async () => {
-    const res = await fetch(`/api/games/${gameId}/hand`);
-    if (res.ok) {
+    // Realtime events (a games UPDATE, a game_events INSERT) can fire in
+    // quick succession — e.g. match_over followed almost immediately by a
+    // rematch's fresh deal — each triggering its own loadHand() call with
+    // no guarantee their *responses* resolve in the same order they were
+    // issued. Without this guard, a slower older request's response can
+    // land after a faster newer one and silently overwrite it with stale
+    // cards. Only the response to the most recently issued request wins.
+    const requestId = ++handRequestId.current;
+    const res = await fetch(`/api/games/${gameId}/hand`, { cache: "no-store" });
+    if (res.ok && requestId === handRequestId.current) {
       const json = await res.json();
-      setHand(json.hand as WhotCard[]);
+      if (requestId === handRequestId.current) {
+        setHand(json.hand as WhotCard[]);
+      }
     }
   }, [gameId]);
 
@@ -97,6 +108,21 @@ export function GameBoard({
     setNow(Date.now());
     return () => clearInterval(tick);
   }, []);
+
+  // Realtime is a convenience channel, not a delivery guarantee — under a
+  // burst of rapid successive commits to the same game row (e.g. match_over
+  // followed almost immediately by a rematch vote and a fresh deal), a
+  // Postgres changes event can occasionally be missed entirely. This
+  // periodic re-sync is the fallback that guarantees eventual consistency
+  // even if that happens, the same way RoomClient's presence heartbeat
+  // guarantees the lobby doesn't get permanently stuck on a stale view.
+  useEffect(() => {
+    const resync = setInterval(() => {
+      void loadPublicState();
+      void loadHand();
+    }, 4_000);
+    return () => clearInterval(resync);
+  }, [loadPublicState, loadHand]);
 
   useEffect(() => {
     const channel = supabase

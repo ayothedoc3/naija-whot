@@ -45,5 +45,14 @@ function loadClientEnv() {
 
 export const clientEnv = loadClientEnv();
 
-export const isDevFixturesEnabled =
-  clientEnv.NEXT_PUBLIC_ENABLE_DEV_FIXTURES && process.env.NODE_ENV !== "production";
+// Deliberately NOT also gated on `process.env.NODE_ENV !== "production"`
+// here: Next.js always sets NODE_ENV=production for any optimized build
+// (including a local `next build && next start` used to test against a
+// production-parity server), so that check would make fixtures
+// unreachable in every built environment, not just a real deployment. The
+// explicit NEXT_PUBLIC_ENABLE_DEV_FIXTURES flag — which a real production
+// deployment's env vars must simply never set, per .env.example and
+// docs/DEPLOYMENT.md — is the actual safety boundary, checked again
+// server-side (independently of this client value) in the fixture route
+// itself. This constant only controls a cosmetic "DEV FIXTURES ON" badge.
+export const isDevFixturesEnabled = clientEnv.NEXT_PUBLIC_ENABLE_DEV_FIXTURES;

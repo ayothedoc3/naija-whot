@@ -71,13 +71,20 @@ export class AppError extends Error {
   }
 }
 
+// Every route in this app serves authoritative, per-request game/room state.
+// Without an explicit no-store, a bare GET response has no header telling
+// the browser (or an intermediary) it's unsafe to reuse for a later
+// identical request — heuristic HTTP caching can then serve a stale body
+// forever, no matter how many times the client "refetches".
+const NO_STORE_HEADERS = { "Cache-Control": "no-store" };
+
 export function errorJson(code: AppErrorCode, message: string, status?: number) {
   return NextResponse.json(
     { error: { code, message } },
-    { status: status ?? STATUS_BY_CODE[code] ?? 400 },
+    { status: status ?? STATUS_BY_CODE[code] ?? 400, headers: NO_STORE_HEADERS },
   );
 }
 
 export function okJson<T extends object>(data: T, status = 200) {
-  return NextResponse.json(data, { status });
+  return NextResponse.json(data, { status, headers: NO_STORE_HEADERS });
 }

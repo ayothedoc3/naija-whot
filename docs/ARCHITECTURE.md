@@ -105,10 +105,31 @@ by timing out repeatedly (handled the same as any other timeout).
 
 ## Development fixture mode
 
-`NEXT_PUBLIC_ENABLE_DEV_FIXTURES=true` (local/dev only; forced off whenever
-`NODE_ENV=production`, checked server-side too so it can't be re-enabled by a
-tampered client env) unlocks seeded decks, forced hands, and forced
-special-card scenarios through a dedicated route
-(`src/app/api/dev/fixtures/route.ts`) used by integration and Playwright
-tests. It never weakens RLS or the action-validation path — it only chooses
-what the _initial_ canonical state looks like.
+`NEXT_PUBLIC_ENABLE_DEV_FIXTURES=true` unlocks forced hands, a forced top
+card/active shape, and a forced market order through
+`POST /api/dev/fixtures/start` (`src/app/api/dev/fixtures/start/route.ts`),
+used by the Playwright suite (`e2e/full-game.spec.ts`) to reliably exercise
+a named special-card or declaration scenario instead of hoping a random
+deal produces one. Everything upstream of it — creating the room, joining,
+becoming ready — is the real, unmocked flow; the fixture route only
+replaces the *dealing* step a normal "Start Game" click would otherwise
+perform, by calling the same `buildFixtureGameState` state constructor
+`src/lib/game-engine/fixtures.ts` shares with the engine's own unit tests
+instead of shuffling a fresh deck.
+
+The route is hard-gated by reading `process.env.NEXT_PUBLIC_ENABLE_DEV_FIXTURES`
+directly on the server — never on any client-supplied flag — and returns a
+plain 404 otherwise. This is deliberately **not** also gated on
+`NODE_ENV === "production"`: Next.js always sets `NODE_ENV=production` for
+any optimized build, including the local `next build && next start` that
+Playwright's own webServer runs for this exact suite, so a `NODE_ENV` check
+would make the route unreachable in every built environment, not just a
+real deployment. The actual safety boundary is that a real production
+deployment's environment variables must simply never set
+`NEXT_PUBLIC_ENABLE_DEV_FIXTURES=true` — `.env.example` and
+`docs/DEPLOYMENT.md` both call this out explicitly. The route never weakens
+RLS or the action-validation path either way; it only chooses what the
+*initial* canonical state looks like. Whenever
+`NEXT_PUBLIC_ENABLE_DEV_FIXTURES` is on, a small "DEV FIXTURES ON" badge
+(`src/components/dev-fixture-badge.tsx`) is shown fixed on-screen, satisfying
+the "clearly marked in the UI" requirement.

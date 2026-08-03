@@ -29,7 +29,12 @@ const nextConfig: NextConfig = {
             key: "Content-Security-Policy",
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline'",
+              // Next.js dev mode (React Refresh / Turbopack HMR) requires
+              // eval() to reconstruct stack traces; production never uses
+              // it, so this stays out of the shipped policy.
+              process.env.NODE_ENV === "production"
+                ? "script-src 'self' 'unsafe-inline'"
+                : "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self' data:",
