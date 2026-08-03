@@ -45,12 +45,19 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 4 — Lobby
 
-- [ ] Landing page: nickname, create/join, how-to-play, rules link, sound toggle, install prompt
-- [ ] Create room route + settings form
-- [ ] Join room by code/link + validation
-- [ ] Lobby screen: presence, ready state, host badge, rule summary, copy link, kick, start
-- [ ] Host transfer on host departure
-- **Acceptance:** two browser sessions can create/join/ready/start a room end-to-end.
+- [x] Landing page: nickname, create/join, how-to-play, rules link, sound toggle (install
+      prompt deferred to Phase 8's PWA work)
+- [x] Create room route (`POST /api/rooms`) + settings form, atomic `create_room_with_host` RPC
+- [x] Join room by code/link + validation (`POST /api/rooms/[code]/join`, atomic `join_room` RPC,
+      idempotent for reconnects)
+- [x] Lobby screen: presence (Realtime + heartbeat), ready state, host badge, rule summary,
+      copy link, native share, kick (client-side RLS-scoped DELETE), start
+- [x] Host transfer on host departure (`handle_room_member_delete` trigger, promotes earliest
+      remaining member)
+- **Acceptance:** two browser sessions can create/join/ready/start a room end-to-end. **DONE —
+  verified with a real two-browser-context Playwright run against the production build**: create →
+  realtime-sync join → realtime-sync ready → host start → both clients transition together. Also
+  fixed a real CSP bug found during this (`connect-src` didn't allow the Realtime WebSocket scheme).
 
 ## Phase 5 — Multiplayer board
 

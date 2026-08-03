@@ -1,0 +1,171 @@
+"use client";
+
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { DEFAULT_RULE_CONFIG, type RuleConfig } from "@/lib/game-engine/rules";
+
+export { DEFAULT_RULE_CONFIG };
+
+interface RoomSettingsFormProps {
+  value: RuleConfig;
+  onChange: (next: RuleConfig) => void;
+  disabled?: boolean;
+}
+
+const RULE_TOGGLES: { key: keyof RuleConfig; label: string; hint: string }[] = [
+  {
+    key: "pickTwoStacking",
+    label: "Pick Two",
+    hint: "Playing a 2 makes the next player draw 2, stacking with more 2s.",
+  },
+  {
+    key: "pickThreeStacking",
+    label: "Pick Three",
+    hint: "Playing a 5 makes the next player draw 3, stacking with more 5s.",
+  },
+  {
+    key: "generalMarket",
+    label: "General Market",
+    hint: "Playing a 14 makes every other player draw 1 card.",
+  },
+  { key: "holdOn", label: "Hold On", hint: "Playing a 1 lets you play again immediately." },
+  { key: "suspension", label: "Suspension", hint: "Playing an 8 skips the next player's turn." },
+  {
+    key: "lastCardDeclaration",
+    label: "Last Card declaration",
+    hint: "Forgetting to declare at 1 card costs a 2-card penalty.",
+  },
+  {
+    key: "checkUpDeclaration",
+    label: "Check Up declaration",
+    hint: "Forgetting to declare on the winning card costs a 2-card penalty.",
+  },
+  {
+    key: "doubleDecking",
+    label: "Double decking",
+    hint: "Allow playing several cards of the same number in one turn.",
+  },
+  {
+    key: "directionChangeOnPenalty",
+    label: "Direction change",
+    hint: "Playing a 2 or 5 may reverse turn order.",
+  },
+];
+
+export function RoomSettingsForm({ value, onChange, disabled }: RoomSettingsFormProps) {
+  function set<K extends keyof RuleConfig>(key: K, next: RuleConfig[K]) {
+    onChange({ ...value, [key]: next });
+  }
+
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="maxPlayers">Max players</Label>
+          <Select
+            value={String(value.maxPlayers)}
+            onValueChange={(v) => set("maxPlayers", Number(v))}
+            disabled={disabled}
+          >
+            <SelectTrigger id="maxPlayers" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[2, 3, 4].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n} players
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="startingHandSize">Starting hand</Label>
+          <Select
+            value={String(value.startingHandSize)}
+            onValueChange={(v) => set("startingHandSize", Number(v))}
+            disabled={disabled}
+          >
+            <SelectTrigger id="startingHandSize" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[3, 4, 5, 6].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n} cards
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="turnTimer">Turn timer</Label>
+          <Select
+            value={String(value.turnTimerSeconds)}
+            onValueChange={(v) => set("turnTimerSeconds", v === "null" ? null : (Number(v) as 10))}
+            disabled={disabled}
+          >
+            <SelectTrigger id="turnTimer" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 20, 30, 60].map((n) => (
+                <SelectItem key={n} value={String(n)}>
+                  {n} seconds
+                </SelectItem>
+              ))}
+              <SelectItem value="null">No timer</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="bestOf">Match length</Label>
+          <Select
+            value={String(value.bestOf)}
+            onValueChange={(v) => set("bestOf", Number(v) as 1)}
+            disabled={disabled}
+          >
+            <SelectTrigger id="bestOf" className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">Single round</SelectItem>
+              <SelectItem value="3">Best of 3</SelectItem>
+              <SelectItem value="5">Best of 5</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <h3 className="text-muted-foreground text-sm font-medium">House rules</h3>
+        {RULE_TOGGLES.map((rule) => (
+          <div key={rule.key} className="flex items-start justify-between gap-3">
+            <div className="flex flex-col">
+              <Label htmlFor={rule.key} className="font-normal">
+                {rule.label}
+              </Label>
+              <span className="text-muted-foreground text-xs">{rule.hint}</span>
+            </div>
+            <Switch
+              id={rule.key}
+              checked={Boolean(value[rule.key])}
+              onCheckedChange={(checked) => set(rule.key, checked as never)}
+              disabled={disabled}
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}

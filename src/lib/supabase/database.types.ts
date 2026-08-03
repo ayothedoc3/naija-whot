@@ -304,8 +304,19 @@ export type Database = {
       create_game: {
         Args: {
           p_canonical_state: Json
+          p_game_id: string
           p_public_state: Json
           p_room_id: string
+        }
+        Returns: string
+      }
+      create_room_with_host: {
+        Args: {
+          p_code: string
+          p_display_name: string
+          p_host_user_id: string
+          p_max_players: number
+          p_settings: Json
         }
         Returns: string
       }
@@ -316,6 +327,15 @@ export type Database = {
       is_room_member: {
         Args: { p_room_id: string; p_user_id: string }
         Returns: boolean
+      }
+      join_room: {
+        Args: { p_code: string; p_display_name: string; p_user_id: string }
+        Returns: {
+          max_players: number
+          room_id: string
+          seat_number: number
+          settings: Json
+        }[]
       }
     }
     Enums: {

@@ -1,5 +1,16 @@
 import type { NextConfig } from "next";
 
+// Realtime connects over ws(s)://, not http(s)://, so the CSP needs both
+// schemes for whatever Supabase URL is actually configured (works for both
+// the local stack's http://127.0.0.1:54321 and a hosted https://*.supabase.co
+// project without hardcoding either).
+function supabaseConnectSrc(): string {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return "";
+  const wsUrl = url.replace(/^http/, "ws");
+  return `${url} ${wsUrl}`;
+}
+
 const nextConfig: NextConfig = {
   output: "standalone",
   typescript: {
@@ -22,7 +33,7 @@ const nextConfig: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               "img-src 'self' data: blob:",
               "font-src 'self' data:",
-              `connect-src 'self' https://*.supabase.co wss://*.supabase.co ${process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""}`,
+              `connect-src 'self' https://*.supabase.co wss://*.supabase.co ${supabaseConnectSrc()}`,
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
