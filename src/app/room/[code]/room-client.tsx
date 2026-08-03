@@ -19,6 +19,7 @@ import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { nicknameSchema } from "@/lib/validation/room";
 import type { RuleConfig } from "@/lib/game-engine/rules";
 import { GameBoard } from "@/components/game/game-board";
+import { RulesHelpDialog } from "@/components/rules/rules-help-dialog";
 
 type RoomStatus = "lobby" | "active" | "finished";
 
@@ -368,14 +369,31 @@ export function RoomClient({ code }: { code: string }) {
         </div>
       </div>
 
+      <section className="border-gold/25 bg-cream/10 text-cream/85 w-full max-w-md rounded-lg border p-3 text-sm">
+        <ol className="grid list-decimal gap-1 pl-5">
+          <li>Share the invite link with friends.</li>
+          <li>Non-host players mark ready.</li>
+          <li>The host starts when everyone is ready.</li>
+          <li>Match by shape or number, then use Last Card and Check Up on time.</li>
+        </ol>
+      </section>
+
       <div className="border-gold/30 bg-cream w-full max-w-md rounded-2xl border p-5 shadow-xl">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-charcoal font-semibold">
             Players ({members.length}/{room.max_players})
           </h2>
-          <Button variant="ghost" size="sm" onClick={leaveRoom} className="text-destructive gap-1">
-            <LogOut className="size-3.5" /> Leave
-          </Button>
+          <div className="flex items-center gap-1">
+            <RulesHelpDialog settings={room.settings} />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={leaveRoom}
+              className="text-destructive gap-1"
+            >
+              <LogOut className="size-3.5" /> Leave
+            </Button>
+          </div>
         </div>
 
         <ul className="flex flex-col gap-2">

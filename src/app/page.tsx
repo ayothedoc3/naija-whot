@@ -7,6 +7,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { OnboardingGuide } from "@/components/onboarding-guide";
 import {
   Dialog,
   DialogContent,
@@ -14,7 +15,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { RoomSettingsForm } from "@/components/lobby/room-settings-form";
 import { ensureSession, getRememberedNickname, rememberNickname } from "@/lib/auth/session";
@@ -138,9 +138,9 @@ export default function Home() {
           </div>
 
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
-            <DialogTrigger render={<Button size="lg" className="w-full" />}>
+            <Button size="lg" className="w-full" onClick={() => setCreateOpen(true)}>
               Create Game
-            </DialogTrigger>
+            </Button>
             <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>Room settings</DialogTitle>
@@ -158,9 +158,14 @@ export default function Home() {
           </Dialog>
 
           <Dialog open={joinOpen} onOpenChange={setJoinOpen}>
-            <DialogTrigger render={<Button size="lg" variant="outline" className="w-full" />}>
+            <Button
+              size="lg"
+              variant="outline"
+              className="w-full"
+              onClick={() => setJoinOpen(true)}
+            >
               Join Game
-            </DialogTrigger>
+            </Button>
             <DialogContent className="sm:max-w-sm">
               <DialogHeader>
                 <DialogTitle>Join a room</DialogTitle>
@@ -189,6 +194,8 @@ export default function Home() {
           </Dialog>
         </div>
       </div>
+
+      <OnboardingGuide />
 
       <section className="text-cream/90 w-full max-w-sm text-sm">
         <h2 className="text-gold mb-2 font-semibold">How to play</h2>

@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { DEFAULT_RULE_CONFIG, type RuleConfig } from "@/lib/game-engine/rules";
+import { HOUSE_RULE_OPTIONS } from "@/lib/game-engine/rules-description";
 
 export { DEFAULT_RULE_CONFIG };
 
@@ -19,45 +20,19 @@ interface RoomSettingsFormProps {
   disabled?: boolean;
 }
 
-const RULE_TOGGLES: { key: keyof RuleConfig; label: string; hint: string }[] = [
-  {
-    key: "pickTwoStacking",
-    label: "Pick Two",
-    hint: "Playing a 2 makes the next player draw 2, stacking with more 2s.",
-  },
-  {
-    key: "pickThreeStacking",
-    label: "Pick Three",
-    hint: "Playing a 5 makes the next player draw 3, stacking with more 5s.",
-  },
-  {
-    key: "generalMarket",
-    label: "General Market",
-    hint: "Playing a 14 makes every other player draw 1 card.",
-  },
-  { key: "holdOn", label: "Hold On", hint: "Playing a 1 lets you play again immediately." },
-  { key: "suspension", label: "Suspension", hint: "Playing an 8 skips the next player's turn." },
-  {
-    key: "lastCardDeclaration",
-    label: "Last Card declaration",
-    hint: "Forgetting to declare at 1 card costs a 2-card penalty.",
-  },
-  {
-    key: "checkUpDeclaration",
-    label: "Check Up declaration",
-    hint: "Forgetting to declare on the winning card costs a 2-card penalty.",
-  },
-  {
-    key: "doubleDecking",
-    label: "Double decking",
-    hint: "Allow playing several cards of the same number in one turn.",
-  },
-  {
-    key: "directionChangeOnPenalty",
-    label: "Direction change",
-    hint: "Playing a 2 or 5 may reverse turn order.",
-  },
+const TOGGLE_KEYS: (keyof RuleConfig)[] = [
+  "pickTwoStacking",
+  "pickThreeStacking",
+  "generalMarket",
+  "holdOn",
+  "suspension",
+  "lastCardDeclaration",
+  "checkUpDeclaration",
+  "doubleDecking",
+  "directionChangeOnPenalty",
 ];
+
+const RULE_TOGGLES = HOUSE_RULE_OPTIONS.filter((rule) => TOGGLE_KEYS.includes(rule.key));
 
 export function RoomSettingsForm({ value, onChange, disabled }: RoomSettingsFormProps) {
   function set<K extends keyof RuleConfig>(key: K, next: RuleConfig[K]) {
@@ -155,7 +130,7 @@ export function RoomSettingsForm({ value, onChange, disabled }: RoomSettingsForm
               <Label htmlFor={rule.key} className="font-normal">
                 {rule.label}
               </Label>
-              <span className="text-muted-foreground text-xs">{rule.hint}</span>
+              <span className="text-muted-foreground text-xs">{rule.description}</span>
             </div>
             <Switch
               id={rule.key}

@@ -16,6 +16,7 @@ export interface CardFaceProps {
   playable?: boolean;
   selected?: boolean;
   onClick?: () => void;
+  title?: string;
   className?: string;
   "data-testid"?: string;
 }
@@ -26,6 +27,7 @@ export function CardFace({
   playable,
   selected,
   onClick,
+  title,
   className,
   "data-testid": testId,
 }: CardFaceProps) {
@@ -39,6 +41,7 @@ export function CardFace({
       type="button"
       data-testid={testId}
       data-card-id={card.id}
+      title={title}
       onClick={onClick}
       disabled={!interactive}
       aria-label={`${SHAPE_LABELS[card.shape]} ${card.displayValue}${playable === false ? ", not playable" : ""}`}

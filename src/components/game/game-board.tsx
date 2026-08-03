@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { ArrowLeftRight, Bookmark, Flag, Loader2, Play, ShieldCheck } from "lucide-react";
+import {
+  ArrowDownUp,
+  ArrowLeftRight,
+  Bookmark,
+  Flag,
+  Loader2,
+  Play,
+  ShieldCheck,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Card as WhotCard, RequestableShape, Shape } from "@/lib/game-engine/cards";
@@ -17,6 +25,7 @@ import { PlayerSeat } from "./player-seat";
 import { ShapeSelector } from "./shape-selector";
 import { RoundResultOverlay } from "./round-result-overlay";
 import { SHAPE_ICONS, SHAPE_LABELS } from "./card-visuals";
+import { RulesHelpDialog } from "@/components/rules/rules-help-dialog";
 
 interface GameBoardProps {
   roomId: string;
@@ -52,6 +61,7 @@ export function GameBoard({
   const [declareCheckUp, setDeclareCheckUp] = useState(false);
   const [reverseDirection, setReverseDirection] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [lastActionError, setLastActionError] = useState<string | null>(null);
   const [now, setNow] = useState(0);
   const [roundScores, setRoundScores] = useState<Record<string, number> | null>(null);
   const triedTimeoutForDeadline = useRef<number | null>(null);
@@ -201,7 +211,9 @@ export function GameBoard({
             await loadHand();
           } else {
             sound.error();
-            toast.error(data.error?.message ?? "That didn't work.");
+            const message = data.error?.message ?? "That didn't work.";
+            setLastActionError(message);
+            toast.error(message);
           }
           return;
         }
@@ -214,8 +226,10 @@ export function GameBoard({
         setDeclareLastCard(false);
         setDeclareCheckUp(false);
         setReverseDirection(false);
+        setLastActionError(null);
       } catch {
         sound.error();
+        setLastActionError("Network error - please try again.");
         toast.error("Network error — please try again.");
       } finally {
         setBusy(false);
@@ -292,6 +306,8 @@ export function GameBoard({
   const isMyTurn = publicState.currentPlayerUserId === currentUserId;
   const myPlayer = publicState.players.find((p) => p.userId === currentUserId);
   const opponents = publicState.players.filter((p) => p.userId !== currentUserId);
+  const currentPlayerName =
+    nameByUserId.get(publicState.currentPlayerUserId ?? "") ?? (isMyTurn ? "You" : "Opponent");
   const selectedCards = selectedCardIds
     .map((id) => hand.find((c) => c.id === id))
     .filter(Boolean) as WhotCard[];
@@ -299,7 +315,12 @@ export function GameBoard({
   const canSelectMore = ruleConfig.doubleDecking;
 
   function toggleCard(card: WhotCard) {
-    if (!isMyTurn || busy) return;
+    const state = publicState;
+    if (!state || !isMyTurn || busy) return;
+    if (!isCardPlayableClientSide(card, state)) {
+      setLastActionError(explainIllegalCard(card, state));
+      return;
+    }
     setSelectedCardIds((prev) => {
       if (prev.includes(card.id)) return prev.filter((id) => id !== card.id);
       if (prev.length === 0) return [card.id];
@@ -354,6 +375,16 @@ export function GameBoard({
   const secondsLeft = publicState.turnDeadline
     ? Math.max(0, Math.ceil((publicState.turnDeadline - now) / 1000))
     : null;
+  const directionText = publicState.direction === 1 ? "Clockwise" : "Counter-clockwise";
+  const actionHint = getActionHint({
+    isMyTurn,
+    pendingPenalty: publicState.pendingPenalty,
+    showLastCardToggle,
+    showCheckUpToggle,
+    topCard: publicState.topCard,
+    activeShape: publicState.activeShape,
+    currentPlayerName,
+  });
 
   return (
     <main className="bg-felt flex min-h-screen flex-col gap-4 px-3 py-4">
@@ -390,15 +421,46 @@ export function GameBoard({
             {secondsLeft}s
           </Badge>
         )}
-        <Button
-          size="sm"
-          variant="ghost"
-          className="text-cream/70 gap-1"
-          onClick={() => void submitAction({ type: "forfeit" })}
-        >
-          <Flag className="size-3.5" /> Forfeit
-        </Button>
+        <div className="flex items-center gap-1">
+          <RulesHelpDialog
+            settings={ruleConfig}
+            publicState={publicState}
+            triggerClassName="bg-cream/90 text-charcoal hover:bg-cream"
+          />
+          <Button
+            size="sm"
+            variant="ghost"
+            className="text-cream/70 gap-1"
+            onClick={() => void submitAction({ type: "forfeit" })}
+          >
+            <Flag className="size-3.5" /> Forfeit
+          </Button>
+        </div>
       </header>
+
+      <section className="border-gold/20 bg-cream/10 text-cream mx-auto grid w-full max-w-3xl gap-2 rounded-lg border p-3 text-sm">
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <Badge variant={isMyTurn ? "default" : "secondary"}>
+            {isMyTurn ? "Your turn" : `${currentPlayerName}'s turn`}
+          </Badge>
+          <Badge variant="outline" className="border-cream/25 text-cream">
+            <ShapeIcon shape={publicState.activeShape} /> Requested{" "}
+            {SHAPE_LABELS[publicState.activeShape]}
+          </Badge>
+          <Badge variant="outline" className="border-cream/25 text-cream">
+            <ArrowDownUp className="size-3" /> {directionText}
+          </Badge>
+          {busy && (
+            <Badge variant="secondary">
+              <Loader2 className="size-3 animate-spin" /> Processing
+            </Badge>
+          )}
+        </div>
+        <p className="text-cream/80 text-center text-xs">{actionHint}</p>
+        {lastActionError && (
+          <p className="text-center text-xs font-medium text-amber-200">{lastActionError}</p>
+        )}
+      </section>
 
       <div className="flex flex-wrap items-center justify-center gap-3">
         {opponents.map((p) => (
@@ -521,25 +583,67 @@ export function GameBoard({
           aria-label="Your hand"
         >
           {hand.map((card) => {
-            const playable = isMyTurn && isCardPlayableClientSide(card, publicState);
+            const playable = isCardPlayableClientSide(card, publicState);
+            const disabledReason = isMyTurn
+              ? explainIllegalCard(card, publicState)
+              : "Wait for your turn.";
             return (
               <CardFace
                 key={card.id}
                 card={card}
                 data-testid="hand-card"
-                playable={!isMyTurn || playable}
+                playable={isMyTurn ? playable : false}
                 selected={selectedCardIds.includes(card.id)}
-                onClick={() => toggleCard(card)}
+                title={playable && isMyTurn ? "Playable" : disabledReason}
+                onClick={isMyTurn && !busy && playable ? () => toggleCard(card) : undefined}
               />
             );
           })}
         </div>
         <p className="text-cream/60 text-center text-xs">
           {myPlayer ? `You have ${myPlayer.handCount} cards` : null}
+          {showLastCardToggle ? " - tap Last Card before playing down to one." : ""}
+          {showCheckUpToggle ? " - tap Check Up before playing your final card." : ""}
         </p>
       </div>
     </main>
   );
+}
+
+function explainIllegalCard(card: WhotCard, state: PublicGameState): string {
+  if (state.pendingPenalty) {
+    return `Penalty pending: defend with a ${state.pendingPenalty.defendingNumber} or draw ${state.pendingPenalty.amount}.`;
+  }
+  if (!state.topCard) return "No top card is available yet.";
+  return `${SHAPE_LABELS[card.shape]} ${card.displayValue} does not match ${SHAPE_LABELS[state.activeShape]} or ${state.topCard.displayValue}.`;
+}
+
+function getActionHint({
+  isMyTurn,
+  pendingPenalty,
+  showLastCardToggle,
+  showCheckUpToggle,
+  topCard,
+  activeShape,
+  currentPlayerName,
+}: {
+  isMyTurn: boolean;
+  pendingPenalty: PublicGameState["pendingPenalty"];
+  showLastCardToggle: boolean;
+  showCheckUpToggle: boolean;
+  topCard: PublicGameState["topCard"];
+  activeShape: Shape;
+  currentPlayerName: string;
+}) {
+  if (!isMyTurn)
+    return `Waiting for ${currentPlayerName}. Online status is shown beside each player.`;
+  if (pendingPenalty) {
+    return `Defend with a ${pendingPenalty.defendingNumber}, or draw ${pendingPenalty.amount}.`;
+  }
+  if (showCheckUpToggle) return "Tap Check Up before playing your final card.";
+  if (showLastCardToggle) return "Tap Last Card before playing down to one card.";
+  if (!topCard) return "Play a legal card or draw from the market.";
+  return `Play a ${SHAPE_LABELS[activeShape]} card, a ${topCard.displayValue}, or Whot.`;
 }
 
 function ShapeIcon({ shape }: { shape: Shape }) {
