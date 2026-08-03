@@ -11,6 +11,8 @@ export function RoundResultOverlay({
   currentUserId,
   onAction,
   busy,
+  remainingCardScores,
+  onLeave,
 }: {
   publicState: PublicGameState;
   nameByUserId: Map<string, string>;
@@ -18,6 +20,8 @@ export function RoundResultOverlay({
   gameId: string;
   onAction: (action: Record<string, unknown>) => void;
   busy: boolean;
+  remainingCardScores: Record<string, number> | null;
+  onLeave: () => void;
 }) {
   const isMatchOver = publicState.status === "match_over";
   const winnerId = isMatchOver ? publicState.matchWinnerUserId : publicState.roundWinnerUserId;
@@ -52,7 +56,11 @@ export function RoundResultOverlay({
           {publicState.players.map((p) => (
             <li key={p.userId} className="text-charcoal flex items-center justify-between py-0.5">
               <span>{nameByUserId.get(p.userId) ?? "Player"}</span>
-              <span className="text-muted-foreground">{p.handCount} cards left</span>
+              <span className="text-muted-foreground">
+                {p.handCount} cards left
+                {remainingCardScores?.[p.userId] !== undefined &&
+                  ` · score ${remainingCardScores[p.userId]}`}
+              </span>
             </li>
           ))}
         </ul>
@@ -94,6 +102,9 @@ export function RoundResultOverlay({
           ) : (
             <p className="text-muted-foreground text-xs">Waiting for everyone to be ready…</p>
           )}
+          <Button variant="ghost" onClick={onLeave} className="w-full">
+            Return to lobby
+          </Button>
         </div>
       </div>
     </div>

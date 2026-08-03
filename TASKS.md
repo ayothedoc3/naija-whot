@@ -108,10 +108,15 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 7 — Match system
 
-- [ ] Round-end summary (winner, card counts, scores)
-- [ ] Best-of match scoring across rounds
-- [ ] Rematch voting + match champion screen
-- **Acceptance:** a best-of-3 match completes and a rematch starts a fresh round.
+- [x] Round-end summary (winner, card counts, remaining-card scores from the round_over event)
+- [x] Best-of match scoring across rounds (engine-side, unit-tested in Phase 2)
+- [x] Rematch voting + match champion screen + "Return to lobby" — pulled forward and live-verified
+      in Phase 5/6/7; added the remaining-card-score display and return-to-lobby button this phase
+- **Acceptance:** a best-of-3 match completes and a rematch starts a fresh round. **DONE** for
+  bestOf=1 (live-verified twice: full playthrough in Phase 5, forfeit path in Phase 6/7). bestOf=3/5
+  scoring and match-champion logic is covered by the Phase 2 engine unit suite
+  (`match-scoring.test.ts`) rather than re-run live, since the wiring is identical regardless of
+  the configured bestOf value — only the engine's win-condition threshold differs.
 
 ## Phase 8 — Polish
 

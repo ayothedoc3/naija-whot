@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ArrowLeftRight, Bookmark, Flag, Loader2, Play, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,7 @@ export function GameBoard({
   players,
   onlineUserIds,
 }: GameBoardProps) {
+  const router = useRouter();
   const supabase = useMemo(() => getBrowserSupabaseClient(), []);
   const [publicState, setPublicState] = useState<PublicGameState | null>(null);
   const [hand, setHand] = useState<WhotCard[]>([]);
@@ -50,6 +52,7 @@ export function GameBoard({
   const [reverseDirection, setReverseDirection] = useState(false);
   const [busy, setBusy] = useState(false);
   const [now, setNow] = useState(0);
+  const [roundScores, setRoundScores] = useState<Record<string, number> | null>(null);
   const triedTimeoutForDeadline = useRef<number | null>(null);
 
   const nameByUserId = useMemo(() => {
@@ -119,6 +122,12 @@ export function GameBoard({
             event_type: string;
             public_payload: Record<string, unknown>;
           };
+          if (evt.event_type === "round_over") {
+            const scores = evt.public_payload.remainingCardScores;
+            if (scores && typeof scores === "object") {
+              setRoundScores(scores as Record<string, number>);
+            }
+          }
           announceEvent(evt.event_type, evt.public_payload, nameByUserId, currentUserId);
         },
       )
@@ -315,6 +324,11 @@ export function GameBoard({
           gameId={gameId}
           onAction={submitAction}
           busy={busy}
+          remainingCardScores={roundScores}
+          onLeave={() => {
+            void submitAction({ type: "leave_game" });
+            router.push("/");
+          }}
         />
       )}
 

@@ -57,15 +57,18 @@ describe("gameActionSchema per-action payloads", () => {
 
   it("requires cardId for play_card", () => {
     expect(gameActionSchema.safeParse({ ...base, type: "play_card" }).success).toBe(false);
-    expect(gameActionSchema.safeParse({ ...base, type: "play_card", cardId: "circle-5" }).success).toBe(
-      true,
-    );
+    expect(
+      gameActionSchema.safeParse({ ...base, type: "play_card", cardId: "circle-5" }).success,
+    ).toBe(true);
   });
 
   it("requires a non-empty cardIds array for play_multi", () => {
-    expect(gameActionSchema.safeParse({ ...base, type: "play_multi", cardIds: [] }).success).toBe(false);
+    expect(gameActionSchema.safeParse({ ...base, type: "play_multi", cardIds: [] }).success).toBe(
+      false,
+    );
     expect(
-      gameActionSchema.safeParse({ ...base, type: "play_multi", cardIds: ["circle-2", "star-2"] }).success,
+      gameActionSchema.safeParse({ ...base, type: "play_multi", cardIds: ["circle-2", "star-2"] })
+        .success,
     ).toBe(true);
   });
 
