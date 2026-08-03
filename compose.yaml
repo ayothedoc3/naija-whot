@@ -1,0 +1,41 @@
+# Local development only — not used in production (Coolify deploys the Dockerfile directly).
+# Requires a running local Supabase instance: pnpm supabase:start
+#
+# Usage:
+#   docker compose up --build
+#   curl http://localhost:3000/api/health
+#
+# Set NEXT_PUBLIC_* values below or in .env.local (compose picks it up automatically).
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://host.docker.internal:54321}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
+        NEXT_PUBLIC_ENABLE_DEV_FIXTURES: ${NEXT_PUBLIC_ENABLE_DEV_FIXTURES:-false}
+    ports:
+      - "3000:3000"
+    environment:
+      SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      SUPABASE_DATABASE_URL: ${SUPABASE_DATABASE_URL:-postgresql://postgres:postgres@host.docker.internal:54322/postgres}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
+      SENTRY_DSN: ${SENTRY_DSN:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3000/api/health', r => process.exit(r.statusCode === 200 ? 0 : 1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      start_period: 10s
+      retries: 3

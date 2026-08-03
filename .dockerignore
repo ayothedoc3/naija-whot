@@ -1,0 +1,44 @@
+# Dependencies (rebuilt in Docker)
+node_modules
+.pnpm-store
+
+# Next.js build output (rebuilt in Docker)
+.next
+out
+
+# Local env files — never bake secrets into the image
+.env
+.env.local
+.env.*.local
+*.pem
+
+# Development / editor
+.DS_Store
+*.log
+.vscode
+.idea
+
+# Test artefacts
+coverage
+playwright-report
+test-results
+blob-report
+
+# Supabase local state
+supabase/.branches
+supabase/.temp
+
+# Git
+.git
+.gitignore
+
+# CI
+.github
+
+# Docs (not needed at runtime)
+docs
+e2e
+
+# TypeScript build info
+*.tsbuildinfo
+next-env.d.ts

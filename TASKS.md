@@ -7,25 +7,26 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [x] Initialize Next.js App Router project (TS strict, Tailwind v4, ESLint, Prettier)
 - [x] Install Supabase, Zod, Vitest, RTL, Playwright, shadcn/ui (Base UI)
 - [x] `next.config.ts`: standalone output, security headers
-- [~] Docs: CLAUDE.md, TASKS.md, docs/PRODUCT_SPEC.md, GAME_RULES.md, ARCHITECTURE.md, DATABASE.md, SECURITY.md, DEPLOYMENT.md
-- [ ] `.env.example`, Zod env validation
-- **Acceptance:** `pnpm build` succeeds on a placeholder page; lint/typecheck clean.
+- [x] Docs: CLAUDE.md, TASKS.md, docs/PRODUCT_SPEC.md, GAME_RULES.md, ARCHITECTURE.md, DATABASE.md, SECURITY.md, DEPLOYMENT.md
+- [x] `.env.example`, Zod env validation
+- **Acceptance:** `pnpm build` succeeds on a placeholder page; lint/typecheck clean. **DONE.**
 
 ## Phase 2 — Game engine
 
-- [ ] `cards.ts` — 54-card Nigerian Whot composition, card metadata
-- [ ] `deck.ts` — deck build, secure shuffle (crypto), seeded shuffle for tests
-- [ ] `types.ts` — discriminated unions for state/actions/events/errors
-- [ ] `rules.ts` — rule configuration + defaults
-- [ ] `validation.ts` — legality checks
-- [ ] `reducer.ts` — pure state transition function
-- [ ] `selectors.ts` — derived queries (current player, playable cards, etc.)
-- [ ] `serialization.ts` / `public-state.ts` — canonical → sanitized public state
-- [ ] `errors.ts` — domain error codes
-- [ ] Full unit test suite (deck composition, shuffles, all special cards, stacking,
+- [x] `cards.ts` — 54-card Nigerian Whot composition, card metadata
+- [x] `deck.ts` — deck build, secure shuffle (crypto), seeded shuffle for tests
+- [x] `types.ts` — discriminated unions for state/actions/events/errors
+- [x] `rules.ts` — rule configuration + defaults
+- [x] `validation.ts` — legality checks
+- [x] `reducer.ts` — pure state transition function
+- [x] `selectors.ts` — derived queries (current player, playable cards, etc.)
+- [x] `serialization.ts` / `public-state.ts` — canonical → sanitized public state
+- [x] `errors.ts` — domain error codes
+- [x] Full unit test suite (deck composition, shuffles, all special cards, stacking,
       declarations, double decking, direction, reshuffle, timers, action-id/version
       rejection, public-state sanitization)
-- **Acceptance:** `pnpm test` green, no Supabase/React import in `game-engine/`.
+- **Acceptance:** `pnpm test` green, no Supabase/React import in `game-engine/`. **DONE — 95/95
+  tests pass; `pnpm lint`, `pnpm typecheck`, `pnpm build` all clean.**
 
 ## Phase 3 — Supabase
 
