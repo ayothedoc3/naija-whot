@@ -77,7 +77,9 @@ export function actOrThrow(
 ): GameState {
   const result = act(state, actingUserId, action, opts);
   if (!result.ok) {
-    throw new Error(`Expected action to succeed but got ${result.error.code}: ${result.error.message}`);
+    throw new Error(
+      `Expected action to succeed but got ${result.error.code}: ${result.error.message}`,
+    );
   }
   return result.state;
 }

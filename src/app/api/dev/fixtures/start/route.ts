@@ -123,7 +123,12 @@ export async function POST(request: Request) {
     return errorJson("INTERNAL_ERROR", "Could not start the fixture game.");
   }
 
-  logEvent({ event: "game_started", gameId: createdGameId, roomId: room.id, playerCount: members.length });
+  logEvent({
+    event: "game_started",
+    gameId: createdGameId,
+    roomId: room.id,
+    playerCount: members.length,
+  });
 
   return okJson({ gameId: createdGameId });
 }

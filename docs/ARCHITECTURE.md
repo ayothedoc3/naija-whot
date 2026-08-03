@@ -112,7 +112,7 @@ used by the Playwright suite (`e2e/full-game.spec.ts`) to reliably exercise
 a named special-card or declaration scenario instead of hoping a random
 deal produces one. Everything upstream of it — creating the room, joining,
 becoming ready — is the real, unmocked flow; the fixture route only
-replaces the *dealing* step a normal "Start Game" click would otherwise
+replaces the _dealing_ step a normal "Start Game" click would otherwise
 perform, by calling the same `buildFixtureGameState` state constructor
 `src/lib/game-engine/fixtures.ts` shares with the engine's own unit tests
 instead of shuffling a fresh deck.
@@ -129,7 +129,7 @@ deployment's environment variables must simply never set
 `NEXT_PUBLIC_ENABLE_DEV_FIXTURES=true` — `.env.example` and
 `docs/DEPLOYMENT.md` both call this out explicitly. The route never weakens
 RLS or the action-validation path either way; it only chooses what the
-*initial* canonical state looks like. Whenever
+_initial_ canonical state looks like. Whenever
 `NEXT_PUBLIC_ENABLE_DEV_FIXTURES` is on, a small "DEV FIXTURES ON" badge
 (`src/components/dev-fixture-badge.tsx`) is shown fixed on-screen, satisfying
 the "clearly marked in the UI" requirement.

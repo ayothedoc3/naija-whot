@@ -128,8 +128,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
       to license), gated by the existing sound-preference toggle; every call is a no-op with sound
       off or with no AudioContext, so the game is always fully playable muted
 - [x] Accessibility: shape+color+text on every card (never color-only), semantic `<button>`s
-      throughout (native keyboard support), ARIA labels on cards/turn indicator, `role="status"`
-      + `aria-live="polite"` on the turn indicator and offline banner
+      throughout (native keyboard support), ARIA labels on cards/turn indicator, `role="status"` + `aria-live="polite"` on the turn indicator and offline banner
 - [x] PWA: manifest (`public/manifest.webmanifest`), original icons generated from
       `scripts/icon-source.svg` (192/512/maskable/apple-icon/favicon via `pnpm icons`), a minimal
       service worker (`public/sw.js`) caching only the static shell + `offline.html` fallback —
@@ -147,12 +146,37 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 9 — QA
 
-- [ ] Security tests (opponent hand never leaks, non-member room access denied)
-- [ ] Integration tests (create → join → ready → start → play → reconnect → rematch)
-- [ ] Playwright two-browser-context E2E (full scenario, spec §16)
-- [ ] `pnpm build` production build verification
-- [ ] No debug/mock code left in place
-- **Acceptance:** full command chain in README §"Running tests" passes locally.
+- [x] Security tests (opponent hand never leaks, non-member room access denied) —
+      `src/test/integration/security.integration.test.ts`, 10/10 passing via
+      `pnpm test:integration` against the real local stack. Fixed a real bug found
+      running it: the test's `create_game` RPC call predated the migration that added
+      a required `p_game_id` parameter, so it had been silently broken (masked by
+      `describe.skipIf` keeping it out of plain `pnpm test`) until run explicitly here.
+- [x] Integration tests (create → join → ready → start → play → reconnect → rematch) —
+      covered by the same integration suite plus the full live Playwright run below.
+- [x] Playwright two-browser-context E2E (full scenario, spec §16) —
+      `e2e/full-game.spec.ts`, both chromium and Mobile Chrome projects passing.
+      Fixed two real bugs found chasing a rematch failure: (1) GET responses had no
+      `Cache-Control` header and the browser Supabase client had no `no-store`
+      fetch override, so a polling client could serve a stale cached response
+      instead of hitting the network — fixed in both places even though it turned
+      out not to be this bug's actual cause; (2) the test's own hand-count check
+      after a rematch was a one-shot read sampled before any real time had passed
+      for Bob's client to observe the update, and its network-leak check ran after
+      Alice's fixture cards had already been legitimately played face-up (making
+      them public top-of-discard) — both fixed by moving the leak check to right
+      after the deal and switching the hand-count check to an auto-retrying
+      `toHaveCount` assertion.
+- [x] `pnpm build` production build verification — clean.
+- [x] No debug/mock code left in place — the one intentional exception is dev
+      fixture mode (`src/app/api/dev/fixtures/start/route.ts`), which exists
+      specifically so the E2E suite can force a deterministic deal; it's gated by
+      `NEXT_PUBLIC_ENABLE_DEV_FIXTURES` (default off, never tied to `NODE_ENV`) and
+      documented in docs/ARCHITECTURE.md and `.env.example` as unsafe for real
+      production use.
+- **Acceptance:** full command chain (`pnpm format && pnpm lint && pnpm typecheck
+&& pnpm test && pnpm build`, plus `pnpm test:integration` and `pnpm exec
+playwright test` against a running local Supabase stack) passes locally. **DONE.**
 
 ## Phase 10 — CI + deployment
 

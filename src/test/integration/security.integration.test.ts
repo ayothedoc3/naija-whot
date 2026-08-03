@@ -49,6 +49,7 @@ describe.skipIf(!RUN)("Supabase RLS and RPC security", () => {
     if (memberErr) throw new Error(`Failed to seed room_members: ${memberErr.message}`);
 
     const { data: id, error: gameErr } = await service.rpc("create_game", {
+      p_game_id: crypto.randomUUID(),
       p_room_id: roomId,
       p_public_state: {
         status: "in_progress",

@@ -127,6 +127,23 @@ test("full multiplayer round: create, join, deterministic play, reconnect, decla
   for (const label of bobHand) expect(aliceHand).not.toContain(label);
   for (const label of aliceHand) expect(bobHand).not.toContain(label);
 
+  // Security: neither client's network traffic ever contained the other
+  // player's card ids anywhere in a JSON response body. Matched as a
+  // quoted JSON string value (`"circle-1"`), not a bare substring — a bare
+  // substring search would spuriously match "circle-1" inside a player's
+  // OWN card id "circle-10" or "circle-13". This must run here, right after
+  // the deal and before anyone plays — once a card is played it becomes the
+  // public top-of-discard, which both clients legitimately see, so checking
+  // later would false-positive on cards that were never actually leaked.
+  const bobOnlyCardIds = ["star-2", "star-3", "star-4"]; // ids not shared with Alice's hand
+  const aliceOnlyCardIds = ["circle-1", "circle-10", "circle-11"];
+  for (const id of bobOnlyCardIds) {
+    expect(seenBodiesA.some((body) => body.includes(`"${id}"`))).toBe(false);
+  }
+  for (const id of aliceOnlyCardIds) {
+    expect(seenBodiesB.some((body) => body.includes(`"${id}"`))).toBe(false);
+  }
+
   await expect(pageA.getByTestId("turn-indicator")).toHaveText("Your turn");
 
   // 8-9. Players take turns; the first play (circle-1, Hold On) is the
@@ -151,7 +168,9 @@ test("full multiplayer round: create, join, deterministic play, reconnect, decla
   await pageB.getByTestId("turn-indicator").waitFor({ timeout: 25_000 });
   await expect(pageB.getByTestId("turn-indicator")).toHaveText("Your turn");
   await expect(pageB.getByTestId("hand-card").first()).toBeVisible({ timeout: 15_000 });
-  expect((await handLabels(pageB)).sort()).toEqual(["Circle 13", "Star 2", "Star 3", "Star 4"].sort());
+  expect((await handLabels(pageB)).sort()).toEqual(
+    ["Circle 13", "Star 2", "Star 3", "Star 4"].sort(),
+  );
 
   await handCard(pageB, "circle-13").click();
   await pageB.getByRole("button", { name: /^Play/ }).click();
@@ -167,8 +186,14 @@ test("full multiplayer round: create, join, deterministic play, reconnect, decla
   // 15. The game ends and both clients show the same winner.
   await pageA.getByText(/wins the match!/).waitFor({ timeout: 25_000 });
   await pageB.getByText(/wins the match!/).waitFor({ timeout: 25_000 });
-  const winnerA = await pageA.getByText(/wins the match!/).first().textContent();
-  const winnerB = await pageB.getByText(/wins the match!/).first().textContent();
+  const winnerA = await pageA
+    .getByText(/wins the match!/)
+    .first()
+    .textContent();
+  const winnerB = await pageB
+    .getByText(/wins the match!/)
+    .first()
+    .textContent();
   expect(winnerA).toBe("Alice wins the match!");
   expect(winnerA).toBe(winnerB);
 
@@ -185,24 +210,15 @@ test("full multiplayer round: create, join, deterministic play, reconnect, decla
   // see match-scoring.test.ts for the same behavior unit-tested. A fresh,
   // real (non-fixture) deal is confirmed by both hands being a full 5 cards.
   await expect(pageA.getByText("Round 1")).toBeVisible();
-  await expect(pageA.getByTestId("hand-card").first()).toBeVisible({ timeout: 15_000 });
-  await expect(pageB.getByTestId("hand-card").first()).toBeVisible({ timeout: 15_000 });
-  expect((await handLabels(pageA)).length).toBe(5);
-  expect((await handLabels(pageB)).length).toBe(5);
-
-  // Security: neither client's network traffic ever contained the other
-  // player's card ids anywhere in a JSON response body. Matched as a
-  // quoted JSON string value (`"circle-1"`), not a bare substring — a bare
-  // substring search would spuriously match "circle-1" inside a player's
-  // OWN card id "circle-10" or "circle-13".
-  const bobOnlyCardIds = ["star-2", "star-3", "star-4"]; // ids not shared with Alice's hand
-  const aliceOnlyCardIds = ["circle-1", "circle-10", "circle-11"];
-  for (const id of bobOnlyCardIds) {
-    expect(seenBodiesA.some((body) => body.includes(`"${id}"`))).toBe(false);
-  }
-  for (const id of aliceOnlyCardIds) {
-    expect(seenBodiesB.some((body) => body.includes(`"${id}"`))).toBe(false);
-  }
+  // toHaveCount is an auto-retrying assertion — unlike a one-shot handLabels()
+  // read, it actually waits out however long Bob's client needs to observe
+  // the fresh deal (Realtime delivery or the periodic re-sync poll), rather
+  // than sampling immediately after a click whose effects haven't propagated
+  // yet. Every wait above it resolves instantly regardless (turn-indicator
+  // and hand-card both already existed pre-rematch), so without this, the
+  // real assertion below was effectively racing the network with no margin.
+  await expect(pageA.getByTestId("hand-card")).toHaveCount(5, { timeout: 15_000 });
+  await expect(pageB.getByTestId("hand-card")).toHaveCount(5, { timeout: 15_000 });
 
   await contextA.close();
   await contextB.close();
