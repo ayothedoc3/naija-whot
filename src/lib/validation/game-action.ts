@@ -2,7 +2,16 @@ import { z } from "zod";
 import { REQUESTABLE_SHAPES } from "@/lib/game-engine/cards";
 
 const actionEnvelope = {
-  actionId: z.string().uuid(),
+  // Normal actions use a client-generated UUID; the resolve_timeout action
+  // deliberately uses `timeout:{gameId}:{deadlineMs}` instead (see
+  // docs/ARCHITECTURE.md § Turn timer) so two racing timeout resolutions
+  // collide on the same id rather than both applying. Validate shape/length
+  // generically rather than requiring UUID format specifically.
+  actionId: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[A-Za-z0-9:._-]+$/, "actionId contains invalid characters"),
   expectedVersion: z.number().int().min(0),
 };
 

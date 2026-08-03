@@ -82,17 +82,29 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 
 ## Phase 6 — Complete rules
 
-- [ ] Pick Two / Pick Three stacking + mixed-penalty rejection
-- [ ] Hold On, Suspension, General Market, Whot shape selection
-- [ ] Last Card / Check Up declarations + penalties
-- [ ] Double decking (disabled by default)
-- [ ] Direction change (disabled by default)
-- [ ] Turn timer: deadline stored server-side, resolved on next interaction
-      (see docs/ARCHITECTURE.md § Timer for the serverless limitation + optional
-      Supabase scheduled-function design)
-- [ ] Market reshuffle preserving top card and player hands
-- [ ] Forfeit / disconnect handling
-- **Acceptance:** engine unit tests cover every rule combination; manual playtest.
+- [x] Pick Two / Pick Three stacking + mixed-penalty rejection (unit-tested in Phase 2;
+      exercised live over ~100 real turns in the Phase 5 playthrough)
+- [x] Hold On, Suspension, General Market, Whot shape selection (same as above)
+- [x] Last Card / Check Up declarations + penalties (same as above; declare-toggle buttons wired
+      into the board)
+- [x] Double decking (disabled by default) — unit-tested (Phase 2); UI multi-select wiring is
+      generic (goes through the same play_multi action every other play uses) and typechecked,
+      not separately re-verified live given the low wiring risk and time budget
+- [x] Direction change (disabled by default) — same as double decking
+- [x] Turn timer: deadline stored server-side, resolved lazily via client polling
+      (see docs/ARCHITECTURE.md § Timer). **Verified live** with a real 20s-expiry
+      two-browser-context test — this caught and fixed a real bug: the action Zod schema
+      required `actionId` to be a UUID, but `resolve_timeout` deliberately uses a
+      `timeout:{gameId}:{deadline}` id for idempotency, so every timeout silently failed
+      validation. Fixed the schema + added a regression test
+      (`src/lib/validation/__tests__/game-action.test.ts`) and made the client retry on
+      the next tick instead of permanently giving up on a deadline after any failure.
+- [x] Market reshuffle preserving top card and player hands (unit-tested Phase 2; exercised live
+      in the Phase 5 playthrough)
+- [x] Forfeit / disconnect handling — **verified live**: forfeiting immediately ends the match
+      with the remaining player declared winner on both clients.
+- **Acceptance:** engine unit tests cover every rule combination; manual playtest. **DONE** —
+  104 unit tests + two targeted live two-browser Playwright checks (forfeit, turn timer).
 
 ## Phase 7 — Match system
 

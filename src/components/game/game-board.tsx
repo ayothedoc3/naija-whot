@@ -194,23 +194,39 @@ export function GameBoard({
     if (!publicState?.turnDeadline || publicState.status !== "in_progress") return;
     if (now < publicState.turnDeadline) return;
     if (triedTimeoutForDeadline.current === publicState.turnDeadline) return;
-    triedTimeoutForDeadline.current = publicState.turnDeadline;
-    void fetch(`/api/games/${gameId}/actions`, {
+    const deadline = publicState.turnDeadline;
+    triedTimeoutForDeadline.current = deadline;
+    fetch(`/api/games/${gameId}/actions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         type: "resolve_timeout",
-        actionId: `timeout:${gameId}:${publicState.turnDeadline}`,
+        actionId: `timeout:${gameId}:${deadline}`,
         expectedVersion: publicState.stateVersion,
       }),
-    }).then((res) => {
-      if (res.ok) {
-        res.json().then((data) => {
+    })
+      .then(async (res) => {
+        if (res.ok) {
+          const data = await res.json();
           setPublicState(data.publicState);
           void loadHand();
-        });
-      }
-    });
+        } else if (triedTimeoutForDeadline.current === deadline) {
+          // VERSION_CONFLICT/DUPLICATE_ACTION here just mean another client
+          // (or our own retry) already resolved it — fine either way. Any
+          // other failure: allow a retry on the next tick instead of
+          // permanently giving up on this deadline.
+          const data = await res.json().catch(() => null);
+          const code = data?.error?.code;
+          if (code !== "VERSION_CONFLICT" && code !== "DUPLICATE_ACTION") {
+            triedTimeoutForDeadline.current = null;
+          }
+        }
+      })
+      .catch(() => {
+        if (triedTimeoutForDeadline.current === deadline) {
+          triedTimeoutForDeadline.current = null;
+        }
+      });
   }, [now, publicState, gameId, loadHand]);
 
   if (!publicState) {
