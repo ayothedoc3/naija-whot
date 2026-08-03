@@ -9,16 +9,16 @@ import { z } from "zod";
 const serverEnvSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1, "SUPABASE_SERVICE_ROLE_KEY is required"),
   SUPABASE_DATABASE_URL: z.string().optional(),
-  TURNSTILE_SECRET_KEY: z.string().optional().default(""),
   SENTRY_DSN: z.string().optional().default(""),
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 
-function loadServerEnv() {
+type ServerEnv = z.infer<typeof serverEnvSchema>;
+
+function loadServerEnv(): ServerEnv {
   const parsed = serverEnvSchema.safeParse({
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     SUPABASE_DATABASE_URL: process.env.SUPABASE_DATABASE_URL,
-    TURNSTILE_SECRET_KEY: process.env.TURNSTILE_SECRET_KEY,
     SENTRY_DSN: process.env.SENTRY_DSN,
     NODE_ENV: process.env.NODE_ENV,
   });
@@ -36,7 +36,20 @@ function loadServerEnv() {
   return parsed.data;
 }
 
-export const serverEnv = loadServerEnv();
+let cachedServerEnv: ServerEnv | undefined;
 
-export const isProduction = serverEnv.NODE_ENV === "production";
-export const isTurnstileEnabled = serverEnv.TURNSTILE_SECRET_KEY.length > 0;
+// Validated lazily, on first property access, rather than at module import
+// time. `next build`'s page-data-collection step imports every route
+// module to read its static config (e.g. `export const dynamic`) without
+// ever calling the handler — an eager `parse()` here would fail that step
+// on any machine that doesn't have runtime-only secrets set at build time
+// (which, per this project's own security model, is every build machine).
+// The validation still throws immediately the first time a request handler
+// actually reads a value, so a missing var is still caught on the first
+// real request rather than silently producing `undefined`.
+export const serverEnv: ServerEnv = new Proxy({} as ServerEnv, {
+  get(_target, prop, receiver) {
+    cachedServerEnv ??= loadServerEnv();
+    return Reflect.get(cachedServerEnv, prop, receiver);
+  },
+});

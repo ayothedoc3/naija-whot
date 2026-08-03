@@ -158,8 +158,11 @@ export function RoomClient({ code }: { code: string }) {
       });
 
     channel.subscribe((status) => {
-      if (status === "SUBSCRIBED" && currentUserId) {
-        void channel.track({ userId: currentUserId, onlineAt: new Date().toISOString() });
+      if (status === "SUBSCRIBED") {
+        void loadRoom();
+        if (currentUserId) {
+          void channel.track({ userId: currentUserId, onlineAt: new Date().toISOString() });
+        }
       }
     });
 

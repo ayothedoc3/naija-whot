@@ -27,7 +27,7 @@ game.
    `https://whot.example.com`) and `http://localhost:3000` to **Redirect
    URLs** / **Site URL** as needed.
 4. Database → run the migrations in `supabase/migrations/` in order (see
-   README "Running migrations" for the exact CLI commands) against this
+   README § Database migrations for the exact CLI commands) against this
    project using `supabase link` + `supabase db push`.
 5. Database → Replication → enable Realtime for `rooms`, `room_members`,
    `games`, `game_events` (the migrations also do this via
@@ -36,14 +36,12 @@ game.
 6. Settings → API → copy the **Project URL**, **anon public key**, and
    **service_role key** (keep the service-role key secret — it never goes in
    `NEXT_PUBLIC_*`).
-7. (Recommended for production) Set up Cloudflare Turnstile
-   (turnstile.cloudflare.com), create a widget, and copy the site key +
-   secret key into `NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY`.
-   This is optional for local dev (leave blank to disable).
 
 ## 2. Environment variables
 
-See `.env.example` for the full annotated list. Split by when they're needed:
+See `.env.example` for the full annotated list, and the root `README.md` §
+Environment variables for the complete required/optional/build-vs-runtime
+matrix. Split by when they're needed:
 
 **Required at Docker _build_ time** (embedded into the JS bundle — Next.js
 inlines `NEXT_PUBLIC_*` values during `next build`):
@@ -51,25 +49,29 @@ inlines `NEXT_PUBLIC_*` values during `next build`):
 - `NEXT_PUBLIC_APP_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` (optional, blank disables Turnstile)
 - `NEXT_PUBLIC_ENABLE_DEV_FIXTURES` (must be `false`/unset in production)
 
 Pass these as Docker **build arguments** (see `Dockerfile` `ARG`/`ENV` pairs)
 — in Coolify, set them under the application's **Build Variables**, not just
 runtime variables, or the compiled bundle will contain empty values.
+The Dockerfile includes local placeholder defaults only so `docker build .`
+can run as a smoke check; never rely on those defaults for a real deployment.
 
 **Required only at container _runtime_** (never baked into the image):
 
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `SUPABASE_DATABASE_URL` (only needed if you run one-off scripts against the
   DB outside the Supabase CLI; not required for the app to serve requests)
-- `TURNSTILE_SECRET_KEY` (optional)
 - `SENTRY_DSN` (optional)
 
 Set these under Coolify's **Runtime Environment Variables**. `src/lib/env/`
-validates all of this with Zod at boot and fails fast with a clear message if
-a required variable is missing — see that folder for exactly which variables
-are required in which `NODE_ENV`.
+validates all of this with Zod — client (public) vars fail the build
+immediately if missing; server-only vars are validated lazily on first use
+(so `next build`'s static page-data collection, which imports every route
+module without invoking it, never needs a runtime-only secret) but still
+fail loudly with a clear message on the very first real request that needs
+them. See that folder for exactly which variables are required in which
+`NODE_ENV`.
 
 ## 3. Local Docker build/run verification
 
@@ -85,6 +87,29 @@ docker build \
 docker run --rm -p 3000:3000 --env-file .env.local naija-whot
 curl -i http://localhost:3000/api/health   # expect HTTP 200 {"status":"ok"}
 ```
+
+`/api/health` will pass even if the app can't reach Supabase at all (by
+design — it's a liveness check, not a dependency check). To actually
+exercise a room/join/play flow against this container, open
+`http://localhost:3000` in a real browser and click through it — **not**
+`curl`, since creating a session requires a browser to hold cookies.
+
+**Networking caveat specific to this test (not a production concern):** the
+container runs in its own network namespace, so `127.0.0.1` inside it is the
+container's own loopback, not your host machine's — it cannot reach a local
+Supabase stack bound to `127.0.0.1:54321` on the host. Your browser (running
+on the host) has no such problem, so you'll see the client-side calls
+succeed while server-side route handlers 401/error trying to reach Supabase.
+This mismatch is purely an artifact of testing a container against a
+loopback-bound local service; it does not exist in real deployment, where
+Supabase has one real HTTPS URL reachable identically from anywhere. To
+verify the container against local Supabase anyway, rebuild pointing at
+`http://host.docker.internal:54321` instead (which Docker Desktop resolves
+to the host from inside any container), and browse using a Chromium launched
+with `--host-resolver-rules="MAP host.docker.internal 127.0.0.1"` so your
+browser resolves the same hostname to the same place. On Linux, add
+`--add-host=host.docker.internal:host-gateway` to the `docker run` command
+first.
 
 ## 4. Coolify setup (exact steps)
 
@@ -139,12 +164,17 @@ curl -i http://localhost:3000/api/health   # expect HTTP 200 {"status":"ok"}
 
 ## 6. GitHub Actions
 
-`.github/workflows/ci.yml` runs install → format check → lint → typecheck →
-unit tests → production `next build` → `docker build` (and Playwright when
-`NEXT_PUBLIC_SUPABASE_URL`/service role secrets are available to the runner).
-It does **not** deploy — Coolify deploys on push via its own GitHub
-integration, independently of this workflow's pass/fail (though you should
-treat a red CI run as a signal not to rely on that commit being deployed).
+`.github/workflows/ci.yml` runs, on every push/PR to `main`/`stage`: install →
+format check → lint → typecheck → unit tests → production `next build` →
+`docker build` (with a health-check + no-`.env`-baked-in assertion) →
+integration tests → Playwright E2E. The integration and E2E jobs each run
+`pnpm exec supabase start` themselves — a real, ephemeral local Postgres +
+Auth + Realtime stack in the runner, using the Supabase CLI's well-known
+local demo credentials (see README § Environment variables) — so neither job
+needs, nor can be silently skipped for lack of, any repository secret. CI
+does **not** deploy — Coolify deploys on push via its own GitHub integration,
+independently of this workflow's pass/fail (though you should treat a red CI
+run as a signal not to rely on that commit being deployed).
 
 ## 7. Optional: self-hosting Supabase on Coolify too
 

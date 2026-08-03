@@ -12,6 +12,14 @@ concurrency:
 
 env:
   NODE_VERSION: "22"
+  # The Supabase CLI's local dev stack (`supabase start`) always seeds these
+  # exact same demo values regardless of project — they are published in
+  # Supabase's own CLI source and docs, not a secret tied to any real
+  # project. Using them here means integration/E2E jobs need zero repository
+  # secrets and can never silently skip for lack of credentials.
+  LOCAL_SUPABASE_URL: "http://127.0.0.1:54321"
+  LOCAL_SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0"
+  LOCAL_SUPABASE_SERVICE_ROLE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU"
 
 jobs:
   # ── quality: format / lint / typecheck ───────────────────────────────────
@@ -66,6 +74,43 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: http://localhost:54321
           NEXT_PUBLIC_SUPABASE_ANON_KEY: test-anon-key
 
+  # ── integration tests: real RLS/RPC checks against a real local Supabase ──
+  integration:
+    name: Integration tests (local Supabase)
+    runs-on: ubuntu-latest
+    needs: quality
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # `supabase start` runs the real Postgres + Auth + Realtime + PostgREST
+      # stack in Docker (already available on ubuntu-latest runners) and
+      # applies every migration in supabase/migrations/ against a fresh
+      # database, the same way local dev does. This is what makes the
+      # security.integration.test.ts suite a real RLS/RPC test, not a mock.
+      - name: Start local Supabase stack
+        run: pnpm exec supabase start
+
+      - name: Run integration tests
+        run: pnpm test:integration
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.LOCAL_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.LOCAL_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.LOCAL_SUPABASE_SERVICE_ROLE_KEY }}
+
+      - name: Stop local Supabase stack
+        if: always()
+        run: pnpm exec supabase stop --no-backup
+
   # ── next build (production bundle check) ─────────────────────────────────
   build:
     name: Next.js build
@@ -90,7 +135,6 @@ jobs:
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-placeholder-anon-key' }}
-          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ""
           NEXT_PUBLIC_ENABLE_DEV_FIXTURES: "false"
           NEXT_TELEMETRY_DISABLED: "1"
 
@@ -115,7 +159,6 @@ jobs:
             NEXT_PUBLIC_APP_URL=http://localhost:3000
             NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://localhost:54321' }}
             NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'ci-placeholder-anon-key' }}
-            NEXT_PUBLIC_TURNSTILE_SITE_KEY=
             NEXT_PUBLIC_ENABLE_DEV_FIXTURES=false
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -129,16 +172,23 @@ jobs:
             -e SUPABASE_SERVICE_ROLE_KEY=ci-placeholder-service-role-key \
             naija-whot:ci
           # Wait for container to be healthy
+          ok=""
           for i in $(seq 1 15); do
             if curl -sf http://localhost:3000/api/health; then
               echo ""
               echo "Health check passed"
+              ok=1
               break
             fi
             echo "Waiting... ($i/15)"
             sleep 2
           done
+          docker logs naija-whot-ci
           docker stop naija-whot-ci
+          if [ -z "$ok" ]; then
+            echo "ERROR: /api/health never returned 200"
+            exit 1
+          fi
 
       - name: Assert no .env files baked into image
         run: |
@@ -152,14 +202,13 @@ jobs:
           docker rm naija-whot-check
           echo "No .env files in image — OK"
 
-  # ── playwright e2e (only when Supabase secrets are available) ────────────
+  # ── playwright e2e: real two-browser-context run against a real local ────
+  # ── Supabase stack, exactly like local dev — never skipped for lack of ───
+  # ── repository secrets, since none are needed.                          ──
   e2e:
     name: E2E tests
     runs-on: ubuntu-latest
     needs: [unit, build]
-    if: >
-      secrets.NEXT_PUBLIC_SUPABASE_URL != '' &&
-      secrets.SUPABASE_SERVICE_ROLE_KEY != ''
     steps:
       - uses: actions/checkout@v4
 
@@ -176,13 +225,16 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm exec playwright install --with-deps chromium
 
+      - name: Start local Supabase stack
+        run: pnpm exec supabase start
+
       - name: Run E2E tests
         run: pnpm e2e
         env:
           NEXT_PUBLIC_APP_URL: http://localhost:3000
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ env.LOCAL_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ env.LOCAL_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ env.LOCAL_SUPABASE_SERVICE_ROLE_KEY }}
           NEXT_PUBLIC_ENABLE_DEV_FIXTURES: "true"
           NEXT_TELEMETRY_DISABLED: "1"
 
@@ -193,3 +245,7 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+      - name: Stop local Supabase stack
+        if: always()
+        run: pnpm exec supabase stop --no-backup

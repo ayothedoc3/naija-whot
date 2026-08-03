@@ -180,17 +180,70 @@ playwright test` against a running local Supabase stack) passes locally. **DONE.
 
 ## Phase 10 — CI + deployment
 
-- [x] GitHub Actions: install, format check, lint, typecheck, unit tests, build, docker build
-- [x] Multi-stage `Dockerfile` (standalone output), `.dockerignore`, `/api/health`
+- [x] GitHub Actions: install, format check, lint, typecheck, unit tests, integration tests,
+      production build, Docker build, Playwright E2E — **all run for real, none conditionally
+      skipped.** The integration and E2E jobs each start a genuine local Supabase stack in the
+      runner via `pnpm exec supabase start` (the CLI's own well-known local demo credentials —
+      not a secret, published in the CLI itself), so neither job depends on, or can be silently
+      skipped for lack of, any repository secret. Previously the E2E job had an `if:
+secrets.NEXT_PUBLIC_SUPABASE_URL != ''` gate that would have silently skipped it on any
+      fork/clone without those secrets configured — removed.
+- [x] Multi-stage `Dockerfile` (standalone output), `.dockerignore`, `/api/health`, non-root user,
+      port 3000, binds `0.0.0.0`, `HEALTHCHECK` — **re-verified live this session with the real
+      Supabase-wired app** (the Phase 2 verification predated Supabase entirely, so it hadn't
+      actually been checked since). Found and fixed a real, build-breaking bug doing this: `next
+build`'s page-data-collection step imports every route module (without invoking it) to read
+      static config, which was enough to trigger `src/lib/env/server.ts`'s eager
+      `SUPABASE_SERVICE_ROLE_KEY` validation at _import_ time — meaning the Docker build failed on
+      every machine that correctly keeps that secret out of the build stage (i.e. every correctly
+      configured build). Fixed by making server-env validation lazy (a `Proxy`, validated on first
+      property access rather than at module load) so a route handler's _own_ first real invocation
+      still fails loudly if the var is missing, but merely importing the module during build
+      analysis does not. Also removed two unused, misleadingly-documented env vars in the process
+      (`NEXT_PUBLIC_TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` — plumbed into validation and
+      `.env.example` with wording implying real verification, but no Turnstile widget or
+      server-side check was ever actually implemented anywhere in the codebase; `docs/SECURITY.md`
+      even referenced a `src/lib/auth/turnstile.ts` that doesn't exist). Takeover final validation
+      also found and fixed a second production-build blocker: `next/font/google` made `pnpm build`
+      depend on fetching Google Fonts during the build, so the app now uses local system font stacks
+      declared in CSS instead.
+- [x] **Live-verified the built image with a real two-browser Playwright session** (not just
+      `curl /api/health`) — create room → join → both ready → start → both clients get correct,
+      non-overlapping 5-card hands, confirming the containerized app is actually playable, not just
+      "serves 200". Surfaced and documented a real (test-environment-only) networking wrinkle:
+      the container's own `127.0.0.1` isn't the host's, so it can't reach a local Supabase stack
+      bound to the host's loopback — worked around for verification via `host.docker.internal` +
+      a Chromium `--host-resolver-rules` remap; documented in `docs/DEPLOYMENT.md` § 3. Does not
+      affect real deployment, which talks to Supabase over one real HTTPS URL from anywhere.
 - [x] `compose.yaml` for local dev/integration only (not required for prod)
-- [ ] README with exact Supabase + Coolify steps
-- [x] Production env validation (build-time vs runtime vars documented)
-- **Acceptance:** `docker build` + `docker run` serve the app locally and `/api/health` returns 200.
-  **Verified** at the end of Phase 2 against the current (pre-Supabase) app state — image builds,
-  container runs as non-root on 0.0.0.0:3000, health check returns 200 with security headers.
-  Will re-verify once Supabase wiring lands. Actual Coolify deployment requires the user's own
-  Coolify instance/account — documented as a manual step, not claimed as completed by this session
-  unless a live URL is verified.
+- [x] README rewritten from create-next-app boilerplate to a full guide: local dev, local Supabase,
+      managed Supabase setup, the complete env var matrix (required/optional, build-time/runtime,
+      public/private, exactly where each is set), Docker (dev + prod-parity testing), GitHub repo
+      setup, the full Coolify walkthrough, and a troubleshooting section built from real issues hit
+      this session (not hypothetical ones).
+- [x] Production env validation (build-time vs runtime vars documented, and now also _enforced_ at
+      the correct time — see the lazy-validation fix above).
+- [x] Realtime lobby reliability: final E2E verification exposed a first-attempt flake where a join
+      could happen before the host's room channel had fully subscribed, leaving the host at
+      `Players (1/4)` until another event. The room client now refreshes once the channel reaches
+      `SUBSCRIBED`, so any missed initial membership event is reconciled immediately.
+- [x] Security review: no secrets in git history (scanned full history for JWT-shaped and other
+      secret patterns — only the public local-demo keys appear anywhere); no secrets in the Docker
+      image (extracted the built image's full filesystem and confirmed the service-role key string
+      appears nowhere, including specifically not in the client-shipped `.next/static/` bundle,
+      while the public anon key correctly does); RLS confirmed actually enabled (not just policied)
+      on all 7 tables via direct `pg_class` query; rate limiting confirmed real (not a stub) and
+      correctly keyed per authenticated user on all 3 routes that need it; logging confirmed to use
+      an explicit discriminated-union allowlist that has no field a hand/deck/token could be passed
+      through even by accident; production error responses confirmed to return only curated
+      messages, never raw exception/stack detail.
+- **Acceptance:** `docker build` + `docker run` serve the app locally, `/api/health` returns 200,
+  and a real two-browser session played through the containerized app correctly. **DONE — fully
+  verified this session**, including a real, previously-undiscovered build-breaking bug found and
+  fixed by actually running the build rather than trusting the earlier (pre-Supabase, therefore
+  stale) verification. Actual **Coolify deployment** and **managed Supabase provisioning** still
+  require the user's own Coolify instance/account and Supabase project credentials — see the final
+  response for exactly what's needed and what was completed without them.
 
 ---
 

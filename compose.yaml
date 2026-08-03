@@ -16,14 +16,12 @@ services:
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL:-http://host.docker.internal:54321}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${NEXT_PUBLIC_TURNSTILE_SITE_KEY:-}
         NEXT_PUBLIC_ENABLE_DEV_FIXTURES: ${NEXT_PUBLIC_ENABLE_DEV_FIXTURES:-false}
     ports:
       - "3000:3000"
     environment:
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
       SUPABASE_DATABASE_URL: ${SUPABASE_DATABASE_URL:-postgresql://postgres:postgres@host.docker.internal:54322/postgres}
-      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
       SENTRY_DSN: ${SENTRY_DSN:-}
     extra_hosts:
       - "host.docker.internal:host-gateway"

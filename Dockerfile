@@ -20,18 +20,16 @@ COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
 # NEXT_PUBLIC_* vars are inlined into the JS bundle at build time.
-# Pass these as Docker --build-arg; leave defaults empty so the build fails
-# fast (via src/lib/env/client.ts Zod validation) if they are not supplied.
-ARG NEXT_PUBLIC_APP_URL=""
-ARG NEXT_PUBLIC_SUPABASE_URL=""
-ARG NEXT_PUBLIC_SUPABASE_ANON_KEY=""
-ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=""
+# The defaults keep `docker build .` usable for local/CI smoke verification.
+# Production deploys must override them with the real app and Supabase values.
+ARG NEXT_PUBLIC_APP_URL="http://localhost:3000"
+ARG NEXT_PUBLIC_SUPABASE_URL="http://localhost:54321"
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY="local-placeholder-anon-key"
 ARG NEXT_PUBLIC_ENABLE_DEV_FIXTURES="false"
 
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
-ENV NEXT_PUBLIC_TURNSTILE_SITE_KEY=$NEXT_PUBLIC_TURNSTILE_SITE_KEY
 ENV NEXT_PUBLIC_ENABLE_DEV_FIXTURES=$NEXT_PUBLIC_ENABLE_DEV_FIXTURES
 
 ENV NODE_ENV=production

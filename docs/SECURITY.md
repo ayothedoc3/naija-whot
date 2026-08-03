@@ -12,10 +12,9 @@ expiry, or match score. All of that lives server-side; see
 Supabase Anonymous Auth. On first visit the client creates an anonymous user
 and a `profiles` row with the chosen nickname; the session persists in a
 Supabase-managed cookie so a refresh does not lose the player. Real identity
-is never required. Production deployments should enable Cloudflare Turnstile
-on the anonymous sign-in call (hook points are in
-`src/lib/auth/turnstile.ts` and documented in `docs/DEPLOYMENT.md`) to slow
-down anonymous-auth abuse/farming.
+is never required. Anonymous-auth abuse/farming is mitigated by the room/action
+rate limits below, not by a bot-challenge widget — no CAPTCHA/Turnstile
+integration exists in this codebase.
 
 ## Authorization (RLS)
 
