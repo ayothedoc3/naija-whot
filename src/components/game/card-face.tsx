@@ -16,6 +16,7 @@ export interface CardFaceProps {
   playable?: boolean;
   selected?: boolean;
   onClick?: () => void;
+  onFocus?: () => void;
   title?: string;
   className?: string;
   "data-testid"?: string;
@@ -27,6 +28,7 @@ export function CardFace({
   playable,
   selected,
   onClick,
+  onFocus,
   title,
   className,
   "data-testid": testId,
@@ -43,15 +45,16 @@ export function CardFace({
       data-card-id={card.id}
       title={title}
       onClick={onClick}
+      onFocus={onFocus}
       disabled={!interactive}
       aria-label={`${SHAPE_LABELS[card.shape]} ${card.displayValue}${playable === false ? ", not playable" : ""}`}
       aria-pressed={selected}
       className={cn(
         SIZE_CLASSES[size],
-        "relative flex shrink-0 flex-col justify-between rounded-lg border-2 bg-white p-1 shadow-sm transition-all select-none",
+        "relative flex shrink-0 flex-col justify-between rounded-lg border-2 bg-white p-1 shadow-sm transition-all select-none focus-visible:z-20",
         interactive && "cursor-pointer",
         playable === false && "opacity-40 saturate-50",
-        selected && "-translate-y-2 ring-2 ring-offset-1",
+        selected && "z-10 -translate-y-2 ring-2 ring-offset-1",
         !interactive && "cursor-default",
         className,
       )}

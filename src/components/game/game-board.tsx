@@ -67,6 +67,7 @@ export function GameBoard({
   const triedTimeoutForDeadline = useRef<number | null>(null);
   const previousIsMyTurn = useRef<boolean | null>(null);
   const handRequestId = useRef(0);
+  const handViewportRef = useRef<HTMLDivElement | null>(null);
 
   const nameByUserId = useMemo(() => {
     const map = new Map<string, string>();
@@ -295,6 +296,41 @@ export function GameBoard({
     previousIsMyTurn.current = isMine;
   }, [publicState?.currentPlayerUserId, currentUserId]);
 
+  const scrollCardIntoHandView = useCallback((cardId: string) => {
+    const viewport = handViewportRef.current;
+    if (!viewport) return;
+
+    const selector =
+      typeof CSS !== "undefined" && CSS.escape
+        ? `[data-card-id="${CSS.escape(cardId)}"]`
+        : `[data-card-id="${cardId}"]`;
+    const cardElement = viewport.querySelector<HTMLElement>(selector);
+    if (!cardElement) return;
+
+    const viewportBox = viewport.getBoundingClientRect();
+    const cardBox = cardElement.getBoundingClientRect();
+    const edgePadding = 8;
+    let delta = 0;
+
+    if (cardBox.left < viewportBox.left + edgePadding) {
+      delta = cardBox.left - viewportBox.left - edgePadding;
+    } else if (cardBox.right > viewportBox.right - edgePadding) {
+      delta = cardBox.right - viewportBox.right + edgePadding;
+    }
+
+    if (Math.abs(delta) < 1) return;
+
+    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    viewport.scrollBy({ left: delta, behavior: prefersReducedMotion ? "auto" : "smooth" });
+  }, []);
+
+  const queueCardIntoHandView = useCallback(
+    (cardId: string) => {
+      window.requestAnimationFrame(() => scrollCardIntoHandView(cardId));
+    },
+    [scrollCardIntoHandView],
+  );
+
   if (!publicState) {
     return (
       <main className="bg-felt flex min-h-screen items-center justify-center">
@@ -321,6 +357,7 @@ export function GameBoard({
       setLastActionError(explainIllegalCard(card, state));
       return;
     }
+    const willSelect = !selectedCardIds.includes(card.id);
     setSelectedCardIds((prev) => {
       if (prev.includes(card.id)) return prev.filter((id) => id !== card.id);
       if (prev.length === 0) return [card.id];
@@ -329,6 +366,7 @@ export function GameBoard({
       }
       return [card.id];
     });
+    if (willSelect) queueCardIntoHandView(card.id);
   }
 
   function handleConfirmPlay() {
@@ -537,8 +575,8 @@ export function GameBoard({
         </p>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center justify-center gap-2">
+      <section className="flex min-w-0 flex-col gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div className="z-10 flex min-h-8 flex-wrap items-center justify-center gap-2">
           {showLastCardToggle && (
             <Button
               size="sm"
@@ -578,34 +616,57 @@ export function GameBoard({
         </div>
 
         <div
-          className="flex justify-center gap-1 overflow-x-auto pb-2"
-          role="list"
-          aria-label="Your hand"
+          ref={handViewportRef}
+          data-testid="hand-scroll-viewport"
+          className="min-w-0 touch-pan-x [scroll-padding-inline:1rem] [scrollbar-gutter:stable] overflow-x-auto overscroll-x-contain pb-2"
+          role="region"
+          aria-label="Your hand scroll area"
+          style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
-          {hand.map((card) => {
-            const playable = isCardPlayableClientSide(card, publicState);
-            const disabledReason = isMyTurn
-              ? explainIllegalCard(card, publicState)
-              : "Wait for your turn.";
-            return (
-              <CardFace
-                key={card.id}
-                card={card}
-                data-testid="hand-card"
-                playable={isMyTurn ? playable : false}
-                selected={selectedCardIds.includes(card.id)}
-                title={playable && isMyTurn ? "Playable" : disabledReason}
-                onClick={isMyTurn && !busy && playable ? () => toggleCard(card) : undefined}
-              />
-            );
-          })}
+          <div
+            data-testid="hand-track"
+            className="flex w-max min-w-full items-end gap-1 pt-3 pb-1"
+            role="list"
+            aria-label="Your hand"
+          >
+            <div
+              data-testid="hand-leading-spacer"
+              aria-hidden
+              className="h-px shrink-0"
+              style={{ flexBasis: "max(1rem, env(safe-area-inset-left))" }}
+            />
+            {hand.map((card) => {
+              const playable = isCardPlayableClientSide(card, publicState);
+              const disabledReason = isMyTurn
+                ? explainIllegalCard(card, publicState)
+                : "Wait for your turn.";
+              return (
+                <CardFace
+                  key={card.id}
+                  card={card}
+                  data-testid="hand-card"
+                  playable={isMyTurn ? playable : false}
+                  selected={selectedCardIds.includes(card.id)}
+                  title={playable && isMyTurn ? "Playable" : disabledReason}
+                  onFocus={() => queueCardIntoHandView(card.id)}
+                  onClick={isMyTurn && !busy && playable ? () => toggleCard(card) : undefined}
+                />
+              );
+            })}
+            <div
+              data-testid="hand-trailing-spacer"
+              aria-hidden
+              className="h-px shrink-0"
+              style={{ flexBasis: "max(1rem, env(safe-area-inset-right))" }}
+            />
+          </div>
         </div>
         <p className="text-cream/60 text-center text-xs">
           {myPlayer ? `You have ${myPlayer.handCount} cards` : null}
           {showLastCardToggle ? " - tap Last Card before playing down to one." : ""}
           {showCheckUpToggle ? " - tap Check Up before playing your final card." : ""}
         </p>
-      </div>
+      </section>
     </main>
   );
 }
