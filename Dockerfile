@@ -1,11 +1,13 @@
-FROM node:20-slim AS base
+FROM node:22-slim AS base
 ENV PNPM_HOME="/pnpm"
 ENV PATH="$PNPM_HOME:$PATH"
-RUN corepack enable && corepack prepare pnpm@9 --activate
+RUN corepack enable
 
 # ── deps: install production + dev dependencies ──────────────────────────────
 FROM base AS deps
 WORKDIR /app
+# package.json pins the exact pnpm version via "packageManager"; corepack
+# resolves and uses it automatically on the first `pnpm` invocation.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 
@@ -38,7 +40,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN pnpm build
 
 # ── runner: minimal production image ─────────────────────────────────────────
-FROM node:20-slim AS runner
+FROM node:22-slim AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
