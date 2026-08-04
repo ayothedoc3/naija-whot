@@ -705,14 +705,14 @@ export function GameBoard({
         <div
           ref={handViewportRef}
           data-testid="hand-scroll-viewport"
-          className="min-w-0 touch-pan-x [scroll-padding-inline:1rem] [scrollbar-gutter:stable] overflow-x-auto overscroll-x-contain pb-2"
+          className="w-full min-w-0 touch-pan-x [scroll-padding-inline:1rem] [scrollbar-gutter:stable] overflow-x-auto overscroll-x-contain pb-2"
           role="region"
           aria-label="Your hand scroll area"
           style={{ WebkitOverflowScrolling: "touch" } as React.CSSProperties}
         >
           <div
             data-testid="hand-track"
-            className="flex w-max min-w-full items-end gap-1 pt-3 pb-1"
+            className="flex w-max min-w-full items-end justify-center gap-1 px-4 pt-3 pb-1"
             role="list"
             aria-label="Your hand"
           >

@@ -125,6 +125,36 @@ const CASES = [
   { name: "412x915 twenty-card hand", viewport: { width: 412, height: 915 }, size: 20 },
 ];
 
+test("desktop hand rail centers cards when the full hand fits", async ({ browser, page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  const contextB = await browser.newContext({ viewport: { width: 1280, height: 800 } });
+  const pageB = await contextB.newPage();
+
+  await createStartedFixture(page, pageB, BASE_HAND.slice(0, 5));
+
+  const viewport = page.getByTestId("hand-scroll-viewport");
+  const cards = page.getByTestId("hand-card");
+  const firstCard = cards.first();
+  const lastCard = cards.last();
+
+  const metrics = await viewport.evaluate((el) => ({
+    maxScrollLeft: el.scrollWidth - el.clientWidth,
+  }));
+  expect(metrics.maxScrollLeft).toBeLessThanOrEqual(2);
+
+  const viewportBox = await bounds(viewport);
+  const firstBox = await bounds(firstCard);
+  const lastBox = await bounds(lastCard);
+  const handCenter = (firstBox.x + lastBox.x + lastBox.width) / 2;
+  const viewportCenter = viewportBox.x + viewportBox.width / 2;
+
+  expect(Math.abs(handCenter - viewportCenter)).toBeLessThanOrEqual(8);
+  await expectFullyInside(viewport, firstCard);
+  await expectFullyInside(viewport, lastCard);
+
+  await contextB.close();
+});
+
 for (const scenario of CASES) {
   test.describe(`mobile hand rail - ${scenario.name}`, () => {
     test.use({
