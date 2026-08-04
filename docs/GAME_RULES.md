@@ -41,10 +41,10 @@ none does today.
 
 - **1 — Hold On:** the same player takes another turn (in 2-player games this
   is still just "play again", not a skip of the only opponent).
-- **2 — Pick Two:** next player draws 2 unless they play another 2, which adds
-  2 more to the pending total and passes the decision along. A player holding
-  a 2 may choose to just draw instead of defending. Drawing the accumulated
-  penalty ends that player's turn.
+- **2 — Pick Two:** next player draws 2 unless penalty stacking is enabled
+  and they play another 2, which adds 2 more to the pending total and passes
+  the decision along. A player holding a 2 may choose to just draw instead of
+  defending. Drawing the accumulated penalty ends that player's turn.
 - **5 — Pick Three:** same mechanics as Pick Two but with 3s/+3, and Pick
   Two/Pick Three penalties never mix — only a 2 defends a Pick Two total, only
   a 5 defends a Pick Three total.
@@ -67,13 +67,14 @@ none does today.
   declaration and applied every card effect; if omitted, the server draws 2
   cards for that player and the round continues.
 
-## Double decking (off by default)
+## Multi-card play (off by default)
 
 When enabled, a player may play multiple cards sharing the same number in one
 action: the first card must be legal against the current call card, every
 subsequent card must share that number, and the final card in the sequence
-determines the resulting active shape. Effects resolve in the order the cards
-were submitted, left to right, fully deterministically.
+determines the resulting active shape. Pick Two/Pick Three add their penalty
+per card in the batch; Hold On, Suspension, and General Market apply once for
+the whole batch.
 
 ## Direction change (off by default)
 

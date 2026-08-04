@@ -154,9 +154,9 @@ test("full multiplayer round: create, join, deterministic play, reconnect, decla
   await expect(pageA.getByTestId("turn-indicator")).toHaveText("Your turn");
   await expect(pageA.getByTestId("hand-card")).toHaveCount(2);
 
-  // 12. Declare "Last Card" correctly (2 cards -> 1) before the next play.
-  await pageA.getByRole("button", { name: "Last Card" }).click();
+  // 12. Declare "Last Card" correctly (2 cards -> 1) for the selected play.
   await handCard(pageA, "circle-10").click();
+  await pageA.getByRole("button", { name: "Last Card" }).click();
   await pageA.getByRole("button", { name: /^Play/ }).click();
   await expect(pageA.getByTestId("hand-card")).toHaveCount(1); // no penalty applied
 
@@ -177,10 +177,10 @@ test("full multiplayer round: create, join, deterministic play, reconnect, decla
   await expect(pageA.getByTestId("turn-indicator")).toHaveText("Your turn", { timeout: 25_000 });
 
   // 13-14. Alice is down to her final card — declare "Check Up" correctly
-  // and win the round (and, at best-of-1, the match).
+  // for the selected final play and win the round (and, at best-of-1, the match).
   await expect(pageA.getByTestId("hand-card")).toHaveCount(1);
-  await pageA.getByRole("button", { name: "Check Up" }).click();
   await handCard(pageA, "circle-11").click();
+  await pageA.getByRole("button", { name: "Check Up" }).click();
   await pageA.getByRole("button", { name: /^Play/ }).click();
 
   // 15. The game ends and both clients show the same winner.

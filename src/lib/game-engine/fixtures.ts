@@ -1,5 +1,5 @@
 import { buildStandardDeck, type Card, type Shape } from "./cards";
-import { DEFAULT_RULE_CONFIG, type RuleConfig } from "./rules";
+import { normalizeRuleConfig, type RuleConfig } from "./rules";
 import type { GameState, PendingPenalty, PlayerState } from "./types";
 
 /**
@@ -26,7 +26,7 @@ export function cards(ids: string[]): Card[] {
 }
 
 export function makeRuleConfig(overrides: Partial<RuleConfig> = {}): RuleConfig {
-  return { ...DEFAULT_RULE_CONFIG, ...overrides };
+  return normalizeRuleConfig(overrides);
 }
 
 export interface FixtureStateParams {

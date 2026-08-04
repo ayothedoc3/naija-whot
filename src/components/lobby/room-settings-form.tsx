@@ -28,7 +28,7 @@ const TOGGLE_KEYS: (keyof RuleConfig)[] = [
   "suspension",
   "lastCardDeclaration",
   "checkUpDeclaration",
-  "doubleDecking",
+  "multiCardPlay",
   "directionChangeOnPenalty",
 ];
 

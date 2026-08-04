@@ -15,6 +15,7 @@ export interface CardFaceProps {
   size?: keyof typeof SIZE_CLASSES;
   playable?: boolean;
   selected?: boolean;
+  selectionOrder?: number;
   onClick?: () => void;
   onFocus?: () => void;
   title?: string;
@@ -27,6 +28,7 @@ export function CardFace({
   size = "md",
   playable,
   selected,
+  selectionOrder,
   onClick,
   onFocus,
   title,
@@ -67,6 +69,15 @@ export function CardFace({
         <Icon className="size-3" aria-hidden />
         {card.displayValue}
       </span>
+      {selectionOrder !== undefined && (
+        <span
+          data-testid="selection-order-badge"
+          className="bg-charcoal text-cream absolute -top-2 -right-2 grid size-5 place-items-center rounded-full text-[10px] font-bold shadow"
+          aria-hidden
+        >
+          {selectionOrder}
+        </span>
+      )}
       <span className="flex flex-1 items-center justify-center">
         <Icon className="size-1/2" style={{ color }} aria-hidden />
       </span>

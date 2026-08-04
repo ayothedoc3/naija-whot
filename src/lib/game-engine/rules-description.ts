@@ -101,12 +101,12 @@ export const HOUSE_RULE_OPTIONS: {
   {
     key: "pickTwoStacking",
     label: "Pick Two stacking",
-    description: "When enabled, a pending Pick Two can be defended only with another 2.",
+    description: "When enabled, a pending Pick Two may be defended with another 2.",
   },
   {
     key: "pickThreeStacking",
     label: "Pick Three stacking",
-    description: "When enabled, a pending Pick Three can be defended only with another 5.",
+    description: "When enabled, a pending Pick Three may be defended with another 5.",
   },
   {
     key: "generalMarket",
@@ -134,9 +134,9 @@ export const HOUSE_RULE_OPTIONS: {
     description: "A player playing their final card must declare Check Up or draw 2 and continue.",
   },
   {
-    key: "doubleDecking",
-    label: "Double decking",
-    description: "Allows several cards of the same number to be played in one turn.",
+    key: "multiCardPlay",
+    label: "Multi-card play",
+    description: "Allows several cards of the same number to be played in one atomic turn.",
   },
   {
     key: "directionChangeOnPenalty",

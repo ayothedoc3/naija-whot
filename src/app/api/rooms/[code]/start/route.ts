@@ -1,6 +1,6 @@
 import { errorJson, okJson } from "@/lib/api-response";
 import { applyAction, createGameState } from "@/lib/game-engine/reducer";
-import type { RuleConfig } from "@/lib/game-engine/rules";
+import { normalizeRuleConfig } from "@/lib/game-engine/rules";
 import { toPublicGameState } from "@/lib/game-engine/public-state";
 import { captureException, logEvent } from "@/lib/logger";
 import { getServerSupabaseClient } from "@/lib/supabase/server";
@@ -55,7 +55,9 @@ export async function POST(_request: Request, { params }: { params: Promise<{ co
   }
 
   const gameId = crypto.randomUUID();
-  const ruleConfig = room.settings as unknown as RuleConfig;
+  const ruleConfig = normalizeRuleConfig(
+    room.settings as Parameters<typeof normalizeRuleConfig>[0],
+  );
   const initial = createGameState({
     gameId,
     seatUserIds: members.map((m) => m.user_id),

@@ -23,7 +23,7 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [x] `serialization.ts` / `public-state.ts` — canonical → sanitized public state
 - [x] `errors.ts` — domain error codes
 - [x] Full unit test suite (deck composition, shuffles, all special cards, stacking,
-      declarations, double decking, direction, reshuffle, timers, action-id/version
+      declarations, multi-card play, direction, reshuffle, timers, action-id/version
       rejection, public-state sanitization)
 - **Acceptance:** `pnpm test` green, no Supabase/React import in `game-engine/`. **DONE — 95/95
   tests pass; `pnpm lint`, `pnpm typecheck`, `pnpm build` all clean.**
@@ -87,10 +87,10 @@ Status legend: `[ ]` not started · `[~]` in progress · `[x]` done
 - [x] Hold On, Suspension, General Market, Whot shape selection (same as above)
 - [x] Last Card / Check Up declarations + penalties (same as above; declare-toggle buttons wired
       into the board)
-- [x] Double decking (disabled by default) — unit-tested (Phase 2); UI multi-select wiring is
+- [x] Multi-card play (disabled by default) — unit-tested (Phase 2); UI multi-select wiring is
       generic (goes through the same play_multi action every other play uses) and typechecked,
       not separately re-verified live given the low wiring risk and time budget
-- [x] Direction change (disabled by default) — same as double decking
+- [x] Direction change (disabled by default) — same as multi-card play
 - [x] Turn timer: deadline stored server-side, resolved lazily via client polling
       (see docs/ARCHITECTURE.md § Timer). **Verified live** with a real 20s-expiry
       two-browser-context test — this caught and fixed a real bug: the action Zod schema

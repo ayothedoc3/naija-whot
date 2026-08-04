@@ -2,7 +2,7 @@ import type { Card, CardEffect, RequestableShape } from "./cards";
 import { isRequestableShape } from "./cards";
 import { buildShuffledDeck, secureShuffle, type ShuffleFn } from "./deck";
 import { gameError, GameEngineError } from "./errors";
-import type { RuleConfig } from "./rules";
+import { normalizeRuleConfig, type RuleConfig } from "./rules";
 import {
   getActivePlayers,
   getCurrentPlayer,
@@ -106,6 +106,7 @@ export function applyAction(
   }
 
   const draft = structuredClone(state);
+  draft.ruleConfig = normalizeRuleConfig(draft.ruleConfig);
   const events: GameEvent[] = [];
   const shuffle: ShuffleFn = ctx.shuffle ?? secureShuffle;
 
@@ -326,9 +327,9 @@ function resolveEffect(card: Card, ruleConfig: RuleConfig): CardEffect | null {
     case "holdOn":
       return ruleConfig.holdOn ? "holdOn" : null;
     case "pickTwo":
-      return ruleConfig.pickTwoStacking ? "pickTwo" : null;
+      return "pickTwo";
     case "pickThree":
-      return ruleConfig.pickThreeStacking ? "pickThree" : null;
+      return "pickThree";
     case "suspension":
       return ruleConfig.suspension ? "suspension" : null;
     case "generalMarket":
@@ -375,11 +376,24 @@ function handlePlay(
   if (new Set(cardIds).size !== cardIds.length) {
     throw gameError("DUPLICATE_CARD_SELECTED", "The same card was selected more than once.");
   }
-  if (cardIds.length > 1 && !draft.ruleConfig.doubleDecking) {
+  if (cardIds.length > 1 && !draft.ruleConfig.multiCardPlay) {
     throw gameError(
-      "DOUBLE_DECKING_DISABLED",
+      "MULTI_CARD_PLAY_DISABLED",
       "This room does not allow playing multiple cards at once.",
     );
+  }
+
+  if (draft.pendingPenalty) {
+    const stackingEnabled =
+      draft.pendingPenalty.type === "pickTwo"
+        ? draft.ruleConfig.pickTwoStacking
+        : draft.ruleConfig.pickThreeStacking;
+    if (!stackingEnabled) {
+      throw gameError(
+        "PENALTY_STACKING_DISABLED",
+        `Penalty stacking is disabled; draw ${draft.pendingPenalty.amount} cards to continue.`,
+      );
+    }
   }
 
   const cards: Card[] = [];
@@ -528,7 +542,7 @@ function applyPlayedEffectsAndAdvanceTurn(
       break;
     }
     case "suspension": {
-      steps = 1 + cards.length;
+      steps = 2;
       const skippedSeat = getNextSeatIndex(draft, actorSeatIndex, 1);
       events.push({
         type: "suspension",
@@ -541,7 +555,7 @@ function applyPlayedEffectsAndAdvanceTurn(
       steps = 0;
       const others = getActivePlayers(draft).filter((p) => p.userId !== ctx.actingUserId);
       for (const other of others) {
-        drawCardsInto(draft, other, cards.length, shuffle, events);
+        drawCardsInto(draft, other, 1, shuffle, events);
       }
       events.push({
         type: "general_market",

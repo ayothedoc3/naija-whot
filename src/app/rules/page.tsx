@@ -101,7 +101,22 @@ export default function RulesPage() {
               <li>Pick Three can be defended only with another 5.</li>
               <li>Pick Two and Pick Three cannot be mixed.</li>
               <li>The penalty accumulates until a player draws it.</li>
-              <li>Pick Two and Pick Three stacking can each be disabled by the host.</li>
+              <li>
+                Pick Two and Pick Three always apply their initial penalty. Stacking controls
+                whether the affected player may defend instead of drawing.
+              </li>
+            </ul>
+          </RulesSection>
+
+          <RulesSection title="Multi-Card Play">
+            <ul className="grid gap-2 text-sm leading-6">
+              <li>When enabled, one turn may include multiple cards with the same number.</li>
+              <li>The first card must be legal against the current table state.</li>
+              <li>
+                The final selected card becomes the top discard and determines the active shape.
+              </li>
+              <li>Pick Two/Pick Three totals add once per card in the batch.</li>
+              <li>Hold On, Suspension, and General Market resolve once for the batch.</li>
             </ul>
           </RulesSection>
 

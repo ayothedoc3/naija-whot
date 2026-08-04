@@ -11,9 +11,12 @@ import {
   Loader2,
   Play,
   ShieldCheck,
+  Undo2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { AudioControls } from "@/components/audio/audio-controls";
 import type { Card as WhotCard, RequestableShape, Shape } from "@/lib/game-engine/cards";
 import type { RuleConfig } from "@/lib/game-engine/rules";
 import type { PublicGameState } from "@/lib/game-engine/public-state";
@@ -37,8 +40,18 @@ interface GameBoardProps {
   onlineUserIds: Set<string>;
 }
 
-function isCardPlayableClientSide(card: WhotCard, state: PublicGameState): boolean {
-  if (state.pendingPenalty) return card.number === state.pendingPenalty.defendingNumber;
+function isCardPlayableClientSide(
+  card: WhotCard,
+  state: PublicGameState,
+  ruleConfig?: RuleConfig,
+): boolean {
+  if (state.pendingPenalty) {
+    const stackingEnabled =
+      state.pendingPenalty.type === "pickTwo"
+        ? ruleConfig?.pickTwoStacking !== false
+        : ruleConfig?.pickThreeStacking !== false;
+    return stackingEnabled && card.number === state.pendingPenalty.defendingNumber;
+  }
   if (card.shape === "Whot") return true;
   if (card.shape === state.activeShape) return true;
   return state.topCard ? card.number === state.topCard.number : false;
@@ -188,46 +201,58 @@ export function GameBoard({
     ): Promise<void> => {
       setBusy(true);
       try {
-        const res = await fetch(`/api/games/${gameId}/actions`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...action, actionId: crypto.randomUUID(), expectedVersion }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          // Someone else's action landed first. The user's intent is still
-          // valid — retry once against the now-current version, rather than
-          // silently dropping their click (a real risk when two players act
-          // near-simultaneously, e.g. both hitting "ready for rematch").
-          if (data.error?.code === "VERSION_CONFLICT" && !isRetry) {
-            const fresh = await loadPublicState();
-            await loadHand();
-            if (fresh) {
-              await performAction(action, fresh.stateVersion, true);
+        let currentVersion = expectedVersion;
+        let attemptedRetry = isRetry;
+
+        for (;;) {
+          const res = await fetch(`/api/games/${gameId}/actions`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              ...action,
+              actionId: crypto.randomUUID(),
+              expectedVersion: currentVersion,
+            }),
+          });
+          const data = await res.json();
+          if (!res.ok) {
+            // Someone else's action landed first. The user's intent is still
+            // valid — retry once against the now-current version, rather than
+            // silently dropping their click (a real risk when two players act
+            // near-simultaneously, e.g. both hitting "ready for rematch").
+            if (data.error?.code === "VERSION_CONFLICT" && !attemptedRetry) {
+              attemptedRetry = true;
+              const fresh = await loadPublicState();
+              await loadHand();
+              if (fresh) {
+                currentVersion = fresh.stateVersion;
+                continue;
+              }
+              return;
+            }
+            if (data.error?.code === "DUPLICATE_ACTION") {
+              await loadPublicState();
+              await loadHand();
+            } else {
+              sound.error();
+              const message = data.error?.message ?? "That didn't work.";
+              setLastActionError(message);
+              toast.error(message);
             }
             return;
           }
-          if (data.error?.code === "DUPLICATE_ACTION") {
-            await loadPublicState();
-            await loadHand();
-          } else {
-            sound.error();
-            const message = data.error?.message ?? "That didn't work.";
-            setLastActionError(message);
-            toast.error(message);
-          }
+          const actionType = action.type;
+          if (actionType === "play_card" || actionType === "play_multi") sound.cardPlay();
+          else if (actionType === "draw_card" || actionType === "accept_penalty") sound.cardDraw();
+          setPublicState(data.publicState);
+          setHand(data.hand);
+          setSelectedCardIds([]);
+          setDeclareLastCard(false);
+          setDeclareCheckUp(false);
+          setReverseDirection(false);
+          setLastActionError(null);
           return;
         }
-        const actionType = action.type;
-        if (actionType === "play_card" || actionType === "play_multi") sound.cardPlay();
-        else if (actionType === "draw_card" || actionType === "accept_penalty") sound.cardDraw();
-        setPublicState(data.publicState);
-        setHand(data.hand);
-        setSelectedCardIds([]);
-        setDeclareLastCard(false);
-        setDeclareCheckUp(false);
-        setReverseDirection(false);
-        setLastActionError(null);
       } catch {
         sound.error();
         setLastActionError("Network error - please try again.");
@@ -348,16 +373,32 @@ export function GameBoard({
     .map((id) => hand.find((c) => c.id === id))
     .filter(Boolean) as WhotCard[];
   const firstSelected = selectedCards[0];
-  const canSelectMore = ruleConfig.doubleDecking;
+  const canSelectMore = ruleConfig.multiCardPlay;
+  const projectedHandCount = selectedCardIds.length
+    ? hand.length - selectedCardIds.length
+    : hand.length;
+  const selectionPreview = getSelectionPreview({
+    selectedCards,
+    projectedHandCount,
+    pendingPenalty: publicState.pendingPenalty,
+    declareLastCard,
+    declareCheckUp,
+    lastCardDeclaration: ruleConfig.lastCardDeclaration,
+    checkUpDeclaration: ruleConfig.checkUpDeclaration,
+  });
 
   function toggleCard(card: WhotCard) {
     const state = publicState;
     if (!state || !isMyTurn || busy) return;
-    if (!isCardPlayableClientSide(card, state)) {
+    const isSelected = selectedCardIds.includes(card.id);
+    if (
+      !isSelected &&
+      !isSelectableForCurrentBatch(card, selectedCards, state, ruleConfig, canSelectMore)
+    ) {
       setLastActionError(explainIllegalCard(card, state));
       return;
     }
-    const willSelect = !selectedCardIds.includes(card.id);
+    const willSelect = !isSelected;
     setSelectedCardIds((prev) => {
       if (prev.includes(card.id)) return prev.filter((id) => id !== card.id);
       if (prev.length === 0) return [card.id];
@@ -367,6 +408,17 @@ export function GameBoard({
       return [card.id];
     });
     if (willSelect) queueCardIntoHandView(card.id);
+  }
+
+  function clearSelection() {
+    setSelectedCardIds([]);
+    setDeclareLastCard(false);
+    setDeclareCheckUp(false);
+    setReverseDirection(false);
+  }
+
+  function undoLastSelection() {
+    setSelectedCardIds((prev) => prev.slice(0, -1));
   }
 
   function handleConfirmPlay() {
@@ -386,24 +438,24 @@ export function GameBoard({
             type: "play_multi",
             cardIds: selectedCardIds,
             chosenShape,
-            declareLastCard,
-            declareCheckUp,
+            declareLastCard: projectedHandCount === 1 && declareLastCard,
+            declareCheckUp: projectedHandCount === 0 && declareCheckUp,
             reverseDirection,
           }
         : {
             type: "play_card",
             cardId: selectedCardIds[0],
             chosenShape,
-            declareLastCard,
-            declareCheckUp,
+            declareLastCard: projectedHandCount === 1 && declareLastCard,
+            declareCheckUp: projectedHandCount === 0 && declareCheckUp,
             reverseDirection,
           };
     setPendingShapeSelection(false);
     return submitAction(payload);
   }
 
-  const showLastCardToggle = isMyTurn && ruleConfig.lastCardDeclaration && hand.length === 2;
-  const showCheckUpToggle = isMyTurn && ruleConfig.checkUpDeclaration && hand.length === 1;
+  const showLastCardToggle = isMyTurn && ruleConfig.lastCardDeclaration && projectedHandCount === 1;
+  const showCheckUpToggle = isMyTurn && ruleConfig.checkUpDeclaration && projectedHandCount === 0;
   const showReverseToggle =
     isMyTurn &&
     ruleConfig.directionChangeOnPenalty &&
@@ -460,6 +512,7 @@ export function GameBoard({
           </Badge>
         )}
         <div className="flex items-center gap-1">
+          <AudioControls mode="game" compact />
           <RulesHelpDialog
             settings={ruleConfig}
             publicState={publicState}
@@ -576,6 +629,18 @@ export function GameBoard({
       </div>
 
       <section className="flex min-w-0 flex-col gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        {selectionPreview.length > 0 && (
+          <div
+            data-testid="selection-summary"
+            className="text-cream/85 flex flex-wrap items-center justify-center gap-1 text-xs"
+          >
+            {selectionPreview.map((item) => (
+              <Badge key={item} variant="secondary" className="bg-cream/90 text-charcoal">
+                {item}
+              </Badge>
+            ))}
+          </div>
+        )}
         <div className="z-10 flex min-h-8 flex-wrap items-center justify-center gap-2">
           {showLastCardToggle && (
             <Button
@@ -613,6 +678,28 @@ export function GameBoard({
               {selectedCardIds.length > 1 ? selectedCardIds.length : ""}
             </Button>
           )}
+          {selectedCardIds.length > 1 && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={undoLastSelection}
+              disabled={busy}
+              className="gap-1"
+            >
+              <Undo2 className="size-3.5" /> Undo last
+            </Button>
+          )}
+          {selectedCardIds.length > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={clearSelection}
+              disabled={busy}
+              className="text-cream/80 gap-1"
+            >
+              <X className="size-3.5" /> Clear
+            </Button>
+          )}
         </div>
 
         <div
@@ -636,17 +723,30 @@ export function GameBoard({
               style={{ flexBasis: "max(1rem, env(safe-area-inset-left))" }}
             />
             {hand.map((card) => {
-              const playable = isCardPlayableClientSide(card, publicState);
-              const disabledReason = isMyTurn
-                ? explainIllegalCard(card, publicState)
-                : "Wait for your turn.";
+              const selectedOrder = selectedCardIds.indexOf(card.id);
+              const playable = isSelectableForCurrentBatch(
+                card,
+                selectedCards,
+                publicState,
+                ruleConfig,
+                canSelectMore,
+              );
+              const disabledReason = explainSelectionState(
+                card,
+                selectedCards,
+                publicState,
+                ruleConfig,
+                canSelectMore,
+                isMyTurn,
+              );
               return (
                 <CardFace
                   key={card.id}
                   card={card}
                   data-testid="hand-card"
                   playable={isMyTurn ? playable : false}
-                  selected={selectedCardIds.includes(card.id)}
+                  selected={selectedOrder !== -1}
+                  selectionOrder={selectedOrder === -1 ? undefined : selectedOrder + 1}
                   title={playable && isMyTurn ? "Playable" : disabledReason}
                   onFocus={() => queueCardIntoHandView(card.id)}
                   onClick={isMyTurn && !busy && playable ? () => toggleCard(card) : undefined}
@@ -677,6 +777,94 @@ function explainIllegalCard(card: WhotCard, state: PublicGameState): string {
   }
   if (!state.topCard) return "No top card is available yet.";
   return `${SHAPE_LABELS[card.shape]} ${card.displayValue} does not match ${SHAPE_LABELS[state.activeShape]} or ${state.topCard.displayValue}.`;
+}
+
+function isSelectableForCurrentBatch(
+  card: WhotCard,
+  selectedCards: WhotCard[],
+  state: PublicGameState,
+  ruleConfig: RuleConfig,
+  multiCardPlay: boolean,
+): boolean {
+  if (selectedCards.some((selected) => selected.id === card.id)) return true;
+  if (selectedCards.length === 0) return isCardPlayableClientSide(card, state, ruleConfig);
+  if (!multiCardPlay) return false;
+  return card.number === selectedCards[0]?.number;
+}
+
+function explainSelectionState(
+  card: WhotCard,
+  selectedCards: WhotCard[],
+  state: PublicGameState,
+  ruleConfig: RuleConfig,
+  multiCardPlay: boolean,
+  isMyTurn: boolean,
+): string {
+  if (!isMyTurn) return "Wait for your turn.";
+  if (selectedCards.some((selected) => selected.id === card.id)) return "Selected. Tap to remove.";
+  if (selectedCards.length === 0) {
+    if (state.pendingPenalty) {
+      const stackingEnabled =
+        state.pendingPenalty.type === "pickTwo"
+          ? ruleConfig.pickTwoStacking
+          : ruleConfig.pickThreeStacking;
+      if (!stackingEnabled) {
+        return `Penalty stacking is off. Draw ${state.pendingPenalty.amount} cards.`;
+      }
+    }
+    return explainIllegalCard(card, state);
+  }
+  if (!multiCardPlay) return "Multi-card play is disabled in this room.";
+  const first = selectedCards[0] as WhotCard;
+  if (card.number !== first.number) {
+    return `Only ${first.displayValue} cards can be added to this batch.`;
+  }
+  return "Playable in this batch.";
+}
+
+function getSelectionPreview({
+  selectedCards,
+  projectedHandCount,
+  pendingPenalty,
+  declareLastCard,
+  declareCheckUp,
+  lastCardDeclaration,
+  checkUpDeclaration,
+}: {
+  selectedCards: WhotCard[];
+  projectedHandCount: number;
+  pendingPenalty: PublicGameState["pendingPenalty"];
+  declareLastCard: boolean;
+  declareCheckUp: boolean;
+  lastCardDeclaration: boolean;
+  checkUpDeclaration: boolean;
+}): string[] {
+  if (selectedCards.length === 0) return [];
+
+  const finalCard = selectedCards[selectedCards.length - 1] as WhotCard;
+  const preview = [`${selectedCards.length} card${selectedCards.length === 1 ? "" : "s"} selected`];
+
+  if (finalCard.number === 2) {
+    const amount = (pendingPenalty?.amount ?? 0) + selectedCards.length * 2;
+    preview.push(`Pick ${amount}`);
+  } else if (finalCard.number === 5) {
+    const amount = (pendingPenalty?.amount ?? 0) + selectedCards.length * 3;
+    preview.push(`Pick ${amount}`);
+  }
+
+  if (finalCard.shape !== "Whot") {
+    preview.push(`Final shape: ${SHAPE_LABELS[finalCard.shape]}`);
+  }
+
+  if (projectedHandCount === 1 && lastCardDeclaration) {
+    preview.push(`1 card will remain — Last Card ${declareLastCard ? "armed" : "required"}`);
+  } else if (projectedHandCount === 0 && checkUpDeclaration) {
+    preview.push(
+      `This play finishes your hand — Check Up ${declareCheckUp ? "armed" : "required"}`,
+    );
+  }
+
+  return preview;
 }
 
 function getActionHint({

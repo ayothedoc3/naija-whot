@@ -1,11 +1,12 @@
 import { ZodError } from "zod";
 import { errorJson, okJson } from "@/lib/api-response";
-import { DEFAULT_RULE_CONFIG } from "@/lib/game-engine/rules";
+import { normalizeRuleConfig } from "@/lib/game-engine/rules";
 import { logEvent, captureException } from "@/lib/logger";
 import { checkRateLimit, RATE_LIMITS } from "@/lib/rate-limit";
 import { generateRoomCode } from "@/lib/room-code";
 import { getServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
+import type { Json } from "@/lib/supabase/database.types";
 import { createRoomSchema } from "@/lib/validation/room";
 
 export const dynamic = "force-dynamic";
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       p_host_user_id: userId,
       p_display_name: input.nickname,
       p_max_players: input.settings.maxPlayers,
-      p_settings: { ...DEFAULT_RULE_CONFIG, ...input.settings },
+      p_settings: normalizeRuleConfig(input.settings) as unknown as Json,
     });
 
     if (!error && roomId) {

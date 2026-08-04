@@ -44,7 +44,8 @@ export const roomSettingsSchema = z.object({
   suspension: z.boolean(),
   lastCardDeclaration: z.boolean(),
   checkUpDeclaration: z.boolean(),
-  doubleDecking: z.boolean(),
+  multiCardPlay: z.boolean(),
+  doubleDecking: z.boolean().optional(),
   directionChangeOnPenalty: z.boolean(),
   bestOf: bestOfSchema,
 });

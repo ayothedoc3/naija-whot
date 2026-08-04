@@ -37,7 +37,7 @@ export const gameActionSchema = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("play_multi"),
     ...actionEnvelope,
-    cardIds: z.array(cardIdSchema).min(1).max(10),
+    cardIds: z.array(cardIdSchema).min(1).max(20),
     chosenShape: requestableShapeSchema.optional(),
     ...declarationFlags,
   }),

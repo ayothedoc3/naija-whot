@@ -53,7 +53,7 @@ app — installable PWA only.
 | Suspension                         | on/off                       | on      |
 | Last Card declaration              | on/off                       | on      |
 | Check Up declaration               | on/off                       | on      |
-| Double decking                     | on/off                       | off     |
+| Multi-card play                    | on/off                       | off     |
 | Direction change on Pick Two/Three | on/off                       | off     |
 | Best-of                            | 1 / 3 / 5                    | 1       |
 

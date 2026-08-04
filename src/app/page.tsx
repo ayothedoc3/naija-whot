@@ -3,11 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { OnboardingGuide } from "@/components/onboarding-guide";
+import { AudioControls } from "@/components/audio/audio-controls";
 import {
   Dialog,
   DialogContent,
@@ -20,7 +20,6 @@ import { RoomSettingsForm } from "@/components/lobby/room-settings-form";
 import { ensureSession, getRememberedNickname, rememberNickname } from "@/lib/auth/session";
 import { DEFAULT_RULE_CONFIG, type RuleConfig } from "@/lib/game-engine/rules";
 import { nicknameSchema, roomCodeSchema } from "@/lib/validation/room";
-import { getSoundEnabled, setSoundEnabled } from "@/lib/sound-preference";
 
 export default function Home() {
   const router = useRouter();
@@ -30,7 +29,6 @@ export default function Home() {
   const [settings, setSettings] = useState<RuleConfig>(DEFAULT_RULE_CONFIG);
   const [joinCode, setJoinCode] = useState("");
   const [busy, setBusy] = useState(false);
-  const [soundOn, setSoundOn] = useState(true);
 
   useEffect(() => {
     // Deliberate: localStorage isn't available during SSR, so the default
@@ -42,7 +40,6 @@ export default function Home() {
     // in an effect despite the lint rule's general cascading-render heuristic).
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setNickname(getRememberedNickname());
-    setSoundOn(getSoundEnabled());
   }, []);
 
   function validatedNickname(): string | null {
@@ -101,12 +98,6 @@ export default function Home() {
     } finally {
       setBusy(false);
     }
-  }
-
-  function toggleSound() {
-    const next = !soundOn;
-    setSoundOn(next);
-    setSoundEnabled(next);
   }
 
   return (
@@ -214,16 +205,9 @@ export default function Home() {
         >
           Full rules
         </a>
-        <button
-          type="button"
-          onClick={toggleSound}
-          className="text-cream/70 hover:text-gold flex items-center gap-1 text-xs"
-          aria-pressed={soundOn}
-        >
-          {soundOn ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
-          Sound {soundOn ? "on" : "off"}
-        </button>
       </div>
+
+      <AudioControls mode="lobby" />
     </main>
   );
 }

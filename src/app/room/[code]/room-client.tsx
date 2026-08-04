@@ -17,7 +17,7 @@ import {
 } from "@/lib/auth/session";
 import { getBrowserSupabaseClient } from "@/lib/supabase/browser";
 import { nicknameSchema } from "@/lib/validation/room";
-import type { RuleConfig } from "@/lib/game-engine/rules";
+import { normalizeRuleConfig, type RuleConfig } from "@/lib/game-engine/rules";
 import { GameBoard } from "@/components/game/game-board";
 import { RulesHelpDialog } from "@/components/rules/rules-help-dialog";
 
@@ -79,7 +79,10 @@ export function RoomClient({ code }: { code: string }) {
       return false;
     }
 
-    setRoom(roomRow as unknown as RoomRow);
+    setRoom({
+      ...(roomRow as unknown as RoomRow),
+      settings: normalizeRuleConfig(roomRow.settings as Parameters<typeof normalizeRuleConfig>[0]),
+    });
 
     const { data: memberRows } = await supabase
       .from("room_members")
@@ -494,7 +497,7 @@ function RuleSummary({ settings }: { settings: RuleConfig }) {
     settings.suspension && "Suspension",
     settings.lastCardDeclaration && "Last Card",
     settings.checkUpDeclaration && "Check Up",
-    settings.doubleDecking && "Double decking",
+    settings.multiCardPlay && "Multi-card play",
     settings.directionChangeOnPenalty && "Direction change",
   ].filter(Boolean) as string[];
 

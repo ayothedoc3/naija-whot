@@ -12,10 +12,15 @@ export interface RuleConfig {
   suspension: boolean;
   lastCardDeclaration: boolean;
   checkUpDeclaration: boolean;
-  doubleDecking: boolean;
+  multiCardPlay: boolean;
   directionChangeOnPenalty: boolean;
   bestOf: BestOf;
 }
+
+type LegacyRuleConfig = Partial<RuleConfig> & {
+  /** Legacy persisted name for multi-card play. Kept for JSON compatibility. */
+  doubleDecking?: boolean;
+};
 
 export const RULE_BOUNDS = {
   maxPlayers: { min: 2, max: 4 },
@@ -35,10 +40,19 @@ export const DEFAULT_RULE_CONFIG: RuleConfig = {
   suspension: true,
   lastCardDeclaration: true,
   checkUpDeclaration: true,
-  doubleDecking: false,
+  multiCardPlay: false,
   directionChangeOnPenalty: false,
   bestOf: 1,
 };
+
+export function normalizeRuleConfig(config: LegacyRuleConfig | null | undefined): RuleConfig {
+  const merged = { ...DEFAULT_RULE_CONFIG, ...(config ?? {}) };
+  return {
+    ...merged,
+    multiCardPlay:
+      config?.multiCardPlay ?? config?.doubleDecking ?? DEFAULT_RULE_CONFIG.multiCardPlay,
+  };
+}
 
 export function isValidRuleConfig(config: Partial<RuleConfig>): config is RuleConfig {
   if (config.maxPlayers === undefined) return false;

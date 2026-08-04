@@ -93,6 +93,18 @@ export function RulesHelpDialog({ settings, publicState, triggerClassName }: Rul
         </section>
 
         <section className="grid gap-2 text-sm">
+          <h3 className="font-semibold">Multi-card play</h3>
+          <p>
+            If enabled, selected cards must share one number. The final selected card becomes the
+            top discard and sets the active shape.
+          </p>
+          <p>
+            Pick Two/Pick Three add per card. Hold On, Suspension, and General Market apply once for
+            the whole batch.
+          </p>
+        </section>
+
+        <section className="grid gap-2 text-sm">
           <h3 className="font-semibold">Declarations</h3>
           <p>
             Last Card is needed before a play that leaves you with exactly 1 card. Missing it draws

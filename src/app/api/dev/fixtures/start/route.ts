@@ -2,7 +2,7 @@ import { ZodError } from "zod";
 import { errorJson, okJson } from "@/lib/api-response";
 import { buildFixtureGameState } from "@/lib/game-engine/fixtures";
 import { toPublicGameState } from "@/lib/game-engine/public-state";
-import type { RuleConfig } from "@/lib/game-engine/rules";
+import { normalizeRuleConfig } from "@/lib/game-engine/rules";
 import { captureException, logEvent } from "@/lib/logger";
 import { getServerSupabaseClient } from "@/lib/supabase/server";
 import { getServiceRoleClient } from "@/lib/supabase/service-role";
@@ -88,10 +88,10 @@ export async function POST(request: Request) {
   }
 
   const gameId = crypto.randomUUID();
-  const ruleConfig = {
-    ...(room.settings as unknown as RuleConfig),
+  const ruleConfig = normalizeRuleConfig({
+    ...(room.settings as Record<string, unknown>),
     ...input.ruleOverrides,
-  } as RuleConfig;
+  });
 
   let state;
   try {
