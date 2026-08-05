@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import { Music, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getSoundEnabled, setSoundEnabled } from "@/lib/sound-preference";
-import { DEFAULT_MUSIC_VOLUME, getMusicVolume, setMusicEnabled } from "@/lib/music-preference";
+import {
+  DEFAULT_MUSIC_VOLUME,
+  getMusicEnabled,
+  getMusicVolume,
+  setMusicEnabled,
+  setMusicVolume,
+} from "@/lib/music-preference";
 import { music, type MusicMode } from "@/lib/music";
 
 interface AudioControlsProps {
@@ -14,22 +20,38 @@ interface AudioControlsProps {
 
 export function AudioControls({ mode, compact }: AudioControlsProps) {
   const [soundOn, setSoundOn] = useState(true);
+  const [musicOn, setMusicOn] = useState(false);
   const [volume, setVolume] = useState(DEFAULT_MUSIC_VOLUME);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSoundOn(getSoundEnabled());
+    const storedMusicEnabled = getMusicEnabled();
     const storedVolume = getMusicVolume();
+    setMusicOn(storedMusicEnabled);
     setVolume(storedVolume);
     music.setVolume(storedVolume);
-    setMusicEnabled(false);
-    void music.setEnabled(false, mode);
+    music.hydrate(storedMusicEnabled, mode);
   }, [mode]);
 
   function toggleSound() {
     const next = !soundOn;
     setSoundOn(next);
     setSoundEnabled(next);
+  }
+
+  function toggleMusic() {
+    const next = !musicOn;
+    setMusicOn(next);
+    setMusicEnabled(next);
+    void music.setEnabled(next, mode);
+  }
+
+  function changeMusicVolume(nextValue: number) {
+    const next = Math.min(1, Math.max(0, nextValue));
+    setVolume(next);
+    setMusicVolume(next);
+    music.setVolume(next);
   }
 
   return (
@@ -49,15 +71,31 @@ export function AudioControls({ mode, compact }: AudioControlsProps) {
         type="button"
         size="sm"
         variant="ghost"
-        disabled
-        aria-pressed="false"
-        title="Music coming soon"
-        className="text-cream/45 gap-1 px-2"
+        onClick={toggleMusic}
+        aria-pressed={musicOn}
+        className="text-cream/75 hover:text-gold gap-1 px-2"
       >
         <Music className="size-3.5" />
-        {compact ? "Music soon" : "Music coming soon"}
+        {compact ? "Music" : `Music ${musicOn ? "on" : "off"}`}
       </Button>
-      <span className="sr-only">Music volume saved at {volume}</span>
+      <label
+        className="text-cream/75 flex items-center gap-1 text-xs"
+        htmlFor={compact ? "music-volume-compact" : "music-volume"}
+      >
+        <span className="sr-only">Music volume</span>
+        <input
+          id={compact ? "music-volume-compact" : "music-volume"}
+          data-testid="music-volume"
+          type="range"
+          min="0"
+          max="1"
+          step="0.01"
+          value={volume}
+          onChange={(event) => changeMusicVolume(Number(event.currentTarget.value))}
+          aria-label="Music volume"
+          className="accent-gold h-4 w-20"
+        />
+      </label>
     </div>
   );
 }
