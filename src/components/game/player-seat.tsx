@@ -25,19 +25,19 @@ export function PlayerSeat({
   return (
     <div
       className={cn(
-        "flex flex-col items-center gap-1 rounded-xl px-3 py-2 transition-colors",
-        isCurrentTurn && "bg-gold/20 ring-gold ring-2",
+        "flex min-w-28 flex-col items-center gap-1.5 rounded-full border border-[#caa15b]/25 bg-[#24130d]/55 px-4 py-2 shadow-[0_8px_18px_rgba(18,9,4,0.28)] backdrop-blur-[2px] transition-colors",
+        isCurrentTurn && "border-[#efcf83] bg-[#4a2615]/75 ring-2 ring-[#efcf83]/80",
         forfeited && "opacity-40",
       )}
       aria-current={isCurrentTurn ? "true" : undefined}
     >
-      <div className="flex items-center gap-1">
+      <div className="flex max-w-40 items-center gap-1.5">
         {online ? (
-          <Wifi className="size-3 text-green-500" aria-label="Online" />
+          <Wifi className="size-3 text-emerald-300" aria-label="Online" />
         ) : (
           <WifiOff className="text-cream/50 size-3" aria-label="Disconnected" />
         )}
-        <span className="text-cream text-sm font-semibold">
+        <span className="text-cream truncate text-sm font-bold">
           {displayName}
           {isSelf && " (You)"}
         </span>
@@ -48,15 +48,17 @@ export function PlayerSeat({
           <CardBack key={i} size="sm" className={cn(i > 0 && "-ml-6")} />
         ))}
       </div>
-      <span className="text-cream/70 text-xs">{handCount} cards</span>
+      <span className="rounded-full border border-[#e1be73]/35 bg-[#f5dfaa]/15 px-2 py-0.5 text-xs font-bold text-[#f8e7bc]">
+        {handCount} cards
+      </span>
       <div className="flex gap-1">
         {lastCardDeclared && (
-          <Badge variant="secondary" className="gap-0.5 text-[10px]">
+          <Badge variant="secondary" className="gap-0.5 bg-[#f6dfaa] text-[10px] text-[#31170f]">
             <Bookmark className="size-2.5" /> Last Card
           </Badge>
         )}
         {checkUpDeclared && (
-          <Badge variant="secondary" className="gap-0.5 text-[10px]">
+          <Badge variant="secondary" className="gap-0.5 bg-[#f6dfaa] text-[10px] text-[#31170f]">
             <ShieldCheck className="size-2.5" /> Check Up
           </Badge>
         )}

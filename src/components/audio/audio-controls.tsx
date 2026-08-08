@@ -62,7 +62,7 @@ export function AudioControls({ mode, compact }: AudioControlsProps) {
         variant="ghost"
         onClick={toggleSound}
         aria-pressed={soundOn}
-        className="text-cream/75 hover:text-gold gap-1 px-2"
+        className="text-cream/80 gap-1 rounded-full px-2 hover:bg-[#f8e7bc]/15 hover:text-[#f8e7bc]"
       >
         {soundOn ? <Volume2 className="size-3.5" /> : <VolumeX className="size-3.5" />}
         {compact ? "SFX" : `Sound ${soundOn ? "on" : "off"}`}
@@ -73,13 +73,13 @@ export function AudioControls({ mode, compact }: AudioControlsProps) {
         variant="ghost"
         onClick={toggleMusic}
         aria-pressed={musicOn}
-        className="text-cream/75 hover:text-gold gap-1 px-2"
+        className="text-cream/80 gap-1 rounded-full px-2 hover:bg-[#f8e7bc]/15 hover:text-[#f8e7bc]"
       >
         <Music className="size-3.5" />
         {compact ? "Music" : `Music ${musicOn ? "on" : "off"}`}
       </Button>
       <label
-        className="text-cream/75 flex items-center gap-1 text-xs"
+        className="text-cream/80 flex items-center gap-1 text-xs"
         htmlFor={compact ? "music-volume-compact" : "music-volume"}
       >
         <span className="sr-only">Music volume</span>

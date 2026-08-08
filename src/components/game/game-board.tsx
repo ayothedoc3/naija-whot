@@ -477,7 +477,11 @@ export function GameBoard({
   });
 
   return (
-    <main className="bg-felt flex min-h-screen flex-col gap-4 px-3 py-4">
+    <main className="bg-wood-table relative flex min-h-screen flex-col gap-4 overflow-hidden px-3 py-4">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-x-[3%] top-[11%] bottom-[12%] rounded-[50%] border border-[#d5ad57]/25 bg-[radial-gradient(ellipse_at_center,rgba(27,87,51,0.88),rgba(18,67,39,0.84)_52%,rgba(25,12,7,0.08)_72%,transparent_74%)] shadow-[inset_0_0_80px_rgba(7,32,18,0.55),0_18px_44px_rgba(16,8,4,0.28)]"
+      />
       <ShapeSelector open={pendingShapeSelection} onSelect={(shape) => void submitPlay(shape)} />
 
       {(publicState.status === "round_over" || publicState.status === "match_over") && (
@@ -496,8 +500,8 @@ export function GameBoard({
         />
       )}
 
-      <header className="flex items-center justify-between">
-        <div className="text-cream/80 flex items-center gap-2 text-xs">
+      <header className="relative z-10 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 rounded-full border border-[#e0bb6e]/25 bg-[#211009]/60 px-3 py-1.5 text-xs font-semibold text-[#f8e7bc] shadow-sm backdrop-blur-[2px]">
           <span>Round {publicState.roundNumber}</span>
           {publicState.bestOf > 1 && (
             <span>
@@ -507,21 +511,24 @@ export function GameBoard({
           )}
         </div>
         {secondsLeft !== null && (
-          <Badge variant={secondsLeft <= 5 ? "destructive" : "secondary"} className="font-mono">
+          <Badge
+            variant={secondsLeft <= 5 ? "destructive" : "secondary"}
+            className="h-7 rounded-full px-3 font-mono shadow-sm"
+          >
             {secondsLeft}s
           </Badge>
         )}
-        <div className="flex items-center gap-1">
+        <div className="flex flex-wrap items-center justify-end gap-1">
           <AudioControls mode="game" compact />
           <RulesHelpDialog
             settings={ruleConfig}
             publicState={publicState}
-            triggerClassName="bg-cream/90 text-charcoal hover:bg-cream"
+            triggerClassName="rounded-full border-[#e1bd74]/40 bg-[#f8e7bc] text-[#2c150d] hover:bg-[#fff3cf]"
           />
           <Button
             size="sm"
             variant="ghost"
-            className="text-cream/70 gap-1"
+            className="text-cream/80 gap-1 rounded-full hover:bg-[#f8e7bc]/15 hover:text-[#f8e7bc]"
             onClick={() => void submitAction({ type: "forfeit" })}
           >
             <Flag className="size-3.5" /> Forfeit
@@ -529,16 +536,19 @@ export function GameBoard({
         </div>
       </header>
 
-      <section className="border-gold/20 bg-cream/10 text-cream mx-auto grid w-full max-w-3xl gap-2 rounded-lg border p-3 text-sm">
+      <section className="relative z-10 mx-auto grid w-full max-w-3xl gap-2 rounded-full border border-[#d6ad62]/30 bg-[#211009]/55 px-4 py-3 text-sm text-[#fff4d6] shadow-[0_12px_30px_rgba(19,8,3,0.24)] backdrop-blur-[2px]">
         <div className="flex flex-wrap items-center justify-center gap-2">
-          <Badge variant={isMyTurn ? "default" : "secondary"}>
+          <Badge
+            variant={isMyTurn ? "default" : "secondary"}
+            className="h-7 rounded-full px-3 font-bold"
+          >
             {isMyTurn ? "Your turn" : `${currentPlayerName}'s turn`}
           </Badge>
-          <Badge variant="outline" className="border-cream/25 text-cream">
+          <Badge variant="outline" className="border-[#e1bd74]/40 bg-[#3b2113]/70 text-[#f8e7bc]">
             <ShapeIcon shape={publicState.activeShape} /> Requested{" "}
             {SHAPE_LABELS[publicState.activeShape]}
           </Badge>
-          <Badge variant="outline" className="border-cream/25 text-cream">
+          <Badge variant="outline" className="border-[#e1bd74]/40 bg-[#3b2113]/70 text-[#f8e7bc]">
             <ArrowDownUp className="size-3" /> {directionText}
           </Badge>
           {busy && (
@@ -553,7 +563,7 @@ export function GameBoard({
         )}
       </section>
 
-      <div className="flex flex-wrap items-center justify-center gap-3">
+      <div className="relative z-10 flex flex-wrap items-center justify-center gap-3">
         {opponents.map((p) => (
           <PlayerSeat
             key={p.userId}
@@ -569,29 +579,31 @@ export function GameBoard({
         ))}
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-4">
-        <div className="flex items-center gap-6">
-          <div className="flex flex-col items-center gap-1">
+      <div className="relative z-10 flex flex-1 flex-col items-center justify-center gap-4">
+        <div className="flex items-end gap-7 rounded-[2rem] border border-[#d6ad62]/20 bg-[#1a0d08]/20 px-6 py-4 shadow-[inset_0_0_32px_rgba(6,28,16,0.22)]">
+          <div className="flex flex-col items-center gap-2">
             <button
               type="button"
               data-testid="draw-card"
               disabled={!isMyTurn || busy || Boolean(publicState.pendingPenalty)}
               onClick={() => void submitAction({ type: "draw_card" })}
-              className="disabled:opacity-40"
+              className="rounded-xl transition-transform hover:-translate-y-1 disabled:opacity-40 disabled:hover:translate-y-0"
               aria-label="Draw a card"
             >
               <CardBack size="lg" />
             </button>
-            <span className="text-cream/70 text-xs">Market · {publicState.marketCount}</span>
+            <span className="rounded-full border border-[#e1bd74]/30 bg-[#2b160d]/80 px-2.5 py-1 text-xs font-semibold text-[#f8e7bc]">
+              Market · {publicState.marketCount}
+            </span>
           </div>
 
-          <div className="flex flex-col items-center gap-1">
+          <div className="flex flex-col items-center gap-2">
             {publicState.topCard && (
               <CardFace card={publicState.topCard} size="lg" data-testid="top-card" />
             )}
             <span
               data-testid="active-shape"
-              className="text-cream/70 flex items-center gap-1 text-xs"
+              className="flex items-center gap-1 rounded-full border border-[#e1bd74]/30 bg-[#2b160d]/80 px-2.5 py-1 text-xs font-semibold text-[#f8e7bc]"
             >
               <ShapeIcon shape={publicState.activeShape} /> {SHAPE_LABELS[publicState.activeShape]}
             </span>
@@ -620,7 +632,7 @@ export function GameBoard({
           data-testid="turn-indicator"
           role="status"
           aria-live="polite"
-          className="text-cream text-sm font-medium"
+          className="rounded-full border border-[#e1bd74]/35 bg-[#25130c]/75 px-3 py-1 text-sm font-bold text-[#fff2cc] shadow-sm"
         >
           {isMyTurn
             ? "Your turn"
@@ -628,14 +640,14 @@ export function GameBoard({
         </p>
       </div>
 
-      <section className="flex min-w-0 flex-col gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
+      <section className="relative z-10 flex min-w-0 flex-col gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">
         {selectionPreview.length > 0 && (
           <div
             data-testid="selection-summary"
             className="text-cream/85 flex flex-wrap items-center justify-center gap-1 text-xs"
           >
             {selectionPreview.map((item) => (
-              <Badge key={item} variant="secondary" className="bg-cream/90 text-charcoal">
+              <Badge key={item} variant="secondary" className="bg-[#f8e7bc] text-[#2b160d]">
                 {item}
               </Badge>
             ))}
@@ -647,7 +659,7 @@ export function GameBoard({
               size="sm"
               variant={declareLastCard ? "default" : "outline"}
               onClick={() => setDeclareLastCard((v) => !v)}
-              className="gap-1"
+              className="gap-1 rounded-full"
             >
               <Bookmark className="size-3.5" /> Last Card
             </Button>
@@ -657,7 +669,7 @@ export function GameBoard({
               size="sm"
               variant={declareCheckUp ? "default" : "outline"}
               onClick={() => setDeclareCheckUp((v) => !v)}
-              className="gap-1"
+              className="gap-1 rounded-full"
             >
               <ShieldCheck className="size-3.5" /> Check Up
             </Button>
@@ -667,13 +679,18 @@ export function GameBoard({
               size="sm"
               variant={reverseDirection ? "default" : "outline"}
               onClick={() => setReverseDirection((v) => !v)}
-              className="gap-1"
+              className="gap-1 rounded-full"
             >
               <ArrowLeftRight className="size-3.5" /> Reverse
             </Button>
           )}
           {selectedCardIds.length > 0 && (
-            <Button size="sm" onClick={handleConfirmPlay} disabled={busy} className="gap-1">
+            <Button
+              size="sm"
+              onClick={handleConfirmPlay}
+              disabled={busy}
+              className="gap-1 rounded-full"
+            >
               <Play className="size-3.5" /> Play{" "}
               {selectedCardIds.length > 1 ? selectedCardIds.length : ""}
             </Button>
@@ -684,7 +701,7 @@ export function GameBoard({
               variant="outline"
               onClick={undoLastSelection}
               disabled={busy}
-              className="gap-1"
+              className="gap-1 rounded-full"
             >
               <Undo2 className="size-3.5" /> Undo last
             </Button>
@@ -695,7 +712,7 @@ export function GameBoard({
               variant="ghost"
               onClick={clearSelection}
               disabled={busy}
-              className="text-cream/80 gap-1"
+              className="text-cream/80 gap-1 rounded-full hover:bg-[#f8e7bc]/15"
             >
               <X className="size-3.5" /> Clear
             </Button>
@@ -761,7 +778,7 @@ export function GameBoard({
             />
           </div>
         </div>
-        <p className="text-cream/60 text-center text-xs">
+        <p className="text-center text-xs text-[#f8e7bc]/70">
           {myPlayer ? `You have ${myPlayer.handCount} cards` : null}
           {showLastCardToggle ? " - tap Last Card before playing down to one." : ""}
           {showCheckUpToggle ? " - tap Check Up before playing your final card." : ""}
