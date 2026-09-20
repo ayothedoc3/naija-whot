@@ -119,7 +119,37 @@ describe("multi-card play", () => {
     expect(next.pendingPenalty).toEqual({ type: "pickTwo", amount: 4, defendingNumber: 2 });
   });
 
+  it("makes 2 + 2 + 2 a Pick Six", () => {
+    const state = craftInProgressState({
+      seatUserIds: ["a", "b"],
+      hands: { a: ["circle-2", "triangle-2", "star-2"], b: ["circle-4"] },
+      topCardId: "circle-5",
+      currentPlayerUserId: "a",
+      rules: { multiCardPlay: true },
+    });
+    const next = actOrThrow(state, "a", {
+      type: "play_multi",
+      cardIds: ["circle-2", "triangle-2", "star-2"],
+    });
+    expect(next.pendingPenalty).toEqual({ type: "pickTwo", amount: 6, defendingNumber: 2 });
+  });
+
   it("compounds Pick Three by the number of 5s played together", () => {
+    const state = craftInProgressState({
+      seatUserIds: ["a", "b"],
+      hands: { a: ["circle-5", "triangle-5"], b: ["circle-4"] },
+      topCardId: "circle-7",
+      currentPlayerUserId: "a",
+      rules: { multiCardPlay: true },
+    });
+    const next = actOrThrow(state, "a", {
+      type: "play_multi",
+      cardIds: ["circle-5", "triangle-5"],
+    });
+    expect(next.pendingPenalty).toEqual({ type: "pickThree", amount: 6, defendingNumber: 5 });
+  });
+
+  it("makes 5 + 5 a Pick Six", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
       hands: { a: ["circle-5", "triangle-5"], b: ["circle-4"] },
@@ -210,6 +240,74 @@ describe("multi-card play", () => {
     expect(next.pendingPenalty).toEqual({ type: "pickTwo", amount: 6, defendingNumber: 2 });
   });
 
+  it("rejects Pick Three cards during a pending Pick Two penalty", () => {
+    const state = craftInProgressState({
+      seatUserIds: ["a", "b"],
+      hands: { a: ["circle-5", "triangle-5"], b: ["circle-4"] },
+      topCardId: "circle-7",
+      currentPlayerUserId: "a",
+      pendingPenalty: { type: "pickTwo", amount: 2, defendingNumber: 2 },
+      rules: { multiCardPlay: true },
+    });
+    const result = act(state, "a", {
+      type: "play_multi",
+      cardIds: ["circle-5", "triangle-5"],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("MUST_DEFEND_OR_ACCEPT_PENALTY");
+  });
+
+  it("rejects Pick Two cards during a pending Pick Three penalty", () => {
+    const state = craftInProgressState({
+      seatUserIds: ["a", "b"],
+      hands: { a: ["circle-2", "triangle-2"], b: ["circle-4"] },
+      topCardId: "circle-7",
+      currentPlayerUserId: "a",
+      pendingPenalty: { type: "pickThree", amount: 3, defendingNumber: 5 },
+      rules: { multiCardPlay: true },
+    });
+    const result = act(state, "a", {
+      type: "play_multi",
+      cardIds: ["circle-2", "triangle-2"],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("MUST_DEFEND_OR_ACCEPT_PENALTY");
+  });
+
+  it("forces drawing instead of defending when Pick Two stacking is disabled", () => {
+    const state = craftInProgressState({
+      seatUserIds: ["a", "b"],
+      hands: { a: ["circle-2", "triangle-2"], b: ["circle-4"] },
+      topCardId: "circle-7",
+      currentPlayerUserId: "a",
+      pendingPenalty: { type: "pickTwo", amount: 2, defendingNumber: 2 },
+      rules: { multiCardPlay: true, pickTwoStacking: false },
+    });
+    const result = act(state, "a", {
+      type: "play_multi",
+      cardIds: ["circle-2", "triangle-2"],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("PENALTY_STACKING_DISABLED");
+  });
+
+  it("forces drawing instead of defending when Pick Three stacking is disabled", () => {
+    const state = craftInProgressState({
+      seatUserIds: ["a", "b"],
+      hands: { a: ["circle-5", "triangle-5"], b: ["circle-4"] },
+      topCardId: "circle-7",
+      currentPlayerUserId: "a",
+      pendingPenalty: { type: "pickThree", amount: 3, defendingNumber: 5 },
+      rules: { multiCardPlay: true, pickThreeStacking: false },
+    });
+    const result = act(state, "a", {
+      type: "play_multi",
+      cardIds: ["circle-5", "triangle-5"],
+    });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("PENALTY_STACKING_DISABLED");
+  });
+
   it("checks Last Card after the entire batch is removed", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
@@ -271,6 +369,28 @@ describe("multi-card play", () => {
     });
     expect(next.status).toBe("in_progress");
     expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(2);
+  });
+
+  it("requires Check Up, not Last Card, when a batch empties the hand", () => {
+    const state = craftInProgressState({
+      seatUserIds: ["a", "b"],
+      hands: { a: ["circle-3", "triangle-3"], b: ["circle-4"] },
+      topCardId: "circle-7",
+      currentPlayerUserId: "a",
+      rules: { multiCardPlay: true },
+    });
+    const result = act(state, "a", {
+      type: "play_multi",
+      cardIds: ["circle-3", "triangle-3"],
+      declareLastCard: true,
+    });
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    const next = result.state;
+    expect(next.status).toBe("in_progress");
+    expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(2);
+    expect(result.events.map((event) => event.type)).toContain("check_up_penalty");
+    expect(result.events.map((event) => event.type)).not.toContain("last_card_penalty");
   });
 
   it("requires exactly one shape choice for a multi-Whot play", () => {

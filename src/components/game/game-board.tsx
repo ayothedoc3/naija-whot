@@ -691,8 +691,8 @@ export function GameBoard({
               disabled={busy}
               className="gap-1 rounded-full"
             >
-              <Play className="size-3.5" /> Play{" "}
-              {selectedCardIds.length > 1 ? selectedCardIds.length : ""}
+              <Play className="size-3.5" /> Play {selectedCardIds.length} card
+              {selectedCardIds.length === 1 ? "" : "s"}
             </Button>
           )}
           {selectedCardIds.length > 1 && (
@@ -863,10 +863,10 @@ function getSelectionPreview({
 
   if (finalCard.number === 2) {
     const amount = (pendingPenalty?.amount ?? 0) + selectedCards.length * 2;
-    preview.push(`Pick ${amount}`);
+    preview.push(formatPickAmount(amount));
   } else if (finalCard.number === 5) {
     const amount = (pendingPenalty?.amount ?? 0) + selectedCards.length * 3;
-    preview.push(`Pick ${amount}`);
+    preview.push(formatPickAmount(amount));
   }
 
   if (finalCard.shape !== "Whot") {
@@ -882,6 +882,20 @@ function getSelectionPreview({
   }
 
   return preview;
+}
+
+function formatPickAmount(amount: number): string {
+  const names: Record<number, string> = {
+    2: "Two",
+    3: "Three",
+    4: "Four",
+    6: "Six",
+    8: "Eight",
+    9: "Nine",
+    10: "Ten",
+    12: "Twelve",
+  };
+  return `Pick ${names[amount] ?? amount}`;
 }
 
 function getActionHint({

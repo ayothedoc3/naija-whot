@@ -65,8 +65,9 @@ test("selection order, middle removal, clearing, and Pick Six preview", async ({
   await handCard(page, "star-2").click();
 
   await expect(page.getByTestId("selection-summary")).toContainText("3 cards selected");
-  await expect(page.getByTestId("selection-summary")).toContainText("Pick 6");
+  await expect(page.getByTestId("selection-summary")).toContainText("Pick Six");
   await expect(page.getByTestId("selection-summary")).toContainText("Final shape: Star");
+  await expect(page.getByRole("button", { name: "Play 3 cards" })).toBeVisible();
   await expect(handCard(page, "circle-10")).toBeDisabled();
   await expect(page.getByTestId("selection-order-badge")).toHaveText(["1", "2", "3"]);
 
