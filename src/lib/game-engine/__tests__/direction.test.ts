@@ -5,7 +5,7 @@ describe("direction change", () => {
   it("reverses turn order in a 3+ player game when enabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b", "c"],
-      hands: { a: ["circle-2"], b: ["circle-3"], c: ["circle-4"] },
+      hands: { a: ["circle-2", "square-10", "cross-10"], b: ["circle-3"], c: ["circle-4"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
       rules: { directionChangeOnPenalty: true },
@@ -23,7 +23,7 @@ describe("direction change", () => {
   it("does not corrupt state in a 2-player game (no practical effect on who's next)", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2"], b: ["circle-3"] },
+      hands: { a: ["circle-2", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
       rules: { directionChangeOnPenalty: true },
@@ -40,7 +40,7 @@ describe("direction change", () => {
   it("is rejected when the rule is disabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2"], b: ["circle-3"] },
+      hands: { a: ["circle-2", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
       rules: { directionChangeOnPenalty: false },
@@ -74,7 +74,7 @@ describe("direction change", () => {
   it("is off by default", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2"], b: ["circle-3"] },
+      hands: { a: ["circle-2", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });

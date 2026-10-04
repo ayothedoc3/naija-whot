@@ -5,7 +5,7 @@ describe("Hold On (1)", () => {
   it("lets the same player play again when enabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-1"], b: ["circle-2"] },
+      hands: { a: ["circle-1", "square-10", "cross-10"], b: ["circle-2"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
@@ -16,7 +16,7 @@ describe("Hold On (1)", () => {
   it("in a two-player game, the same player still plays again", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-1"], b: ["circle-2"] },
+      hands: { a: ["circle-1", "square-10", "cross-10"], b: ["circle-2"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
@@ -27,7 +27,7 @@ describe("Hold On (1)", () => {
   it("acts as a normal card when the rule is disabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-1"], b: ["circle-2"] },
+      hands: { a: ["circle-1", "square-10", "cross-10"], b: ["circle-2"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
       rules: { holdOn: false },
@@ -41,7 +41,7 @@ describe("Suspension (8)", () => {
   it("skips the next active player in a 3+ player game", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b", "c"],
-      hands: { a: ["circle-8"], b: ["circle-2"], c: ["circle-3"] },
+      hands: { a: ["circle-8", "square-10", "cross-10"], b: ["circle-2"], c: ["circle-3"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
@@ -52,7 +52,7 @@ describe("Suspension (8)", () => {
   it("gives the player who played it another turn in a 2-player game", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-8"], b: ["circle-2"] },
+      hands: { a: ["circle-8", "square-10", "cross-10"], b: ["circle-2"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
@@ -65,7 +65,7 @@ describe("General Market (14)", () => {
   it("makes every other active player draw one card and the actor plays again", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b", "c"],
-      hands: { a: ["circle-14"], b: ["circle-2"], c: ["circle-3"] },
+      hands: { a: ["circle-14", "square-10", "cross-10"], b: ["circle-2"], c: ["circle-3"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
@@ -78,7 +78,7 @@ describe("General Market (14)", () => {
   it("cannot be defended against", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-14"], b: ["circle-2"] },
+      hands: { a: ["circle-14", "square-10", "cross-10"], b: ["circle-2"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
@@ -91,7 +91,7 @@ describe("Pick Two (2)", () => {
   it("sets a pending penalty of 2 for the next player", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2"], b: ["circle-3"] },
+      hands: { a: ["circle-2", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
@@ -103,7 +103,7 @@ describe("Pick Two (2)", () => {
   it("stacks when defended with another 2", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-3"], b: ["triangle-2"] },
+      hands: { a: ["circle-3"], b: ["triangle-2", "square-10", "cross-10"] },
       topCardId: "circle-5",
       currentPlayerUserId: "b",
       pendingPenalty: { type: "pickTwo", amount: 2, defendingNumber: 2 },
@@ -129,7 +129,7 @@ describe("Pick Two (2)", () => {
   it("still applies the initial Pick Two when stacking is disabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2"], b: ["circle-3"] },
+      hands: { a: ["circle-2", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
       rules: { pickTwoStacking: false },
@@ -144,7 +144,7 @@ describe("Pick Three (5)", () => {
   it("sets a pending penalty of 3 for the next player", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-5"], b: ["circle-3"] },
+      hands: { a: ["circle-5", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
     });
@@ -155,7 +155,7 @@ describe("Pick Three (5)", () => {
   it("stacks when defended with another 5", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-3"], b: ["triangle-5"] },
+      hands: { a: ["circle-3"], b: ["triangle-5", "square-10", "cross-10"] },
       topCardId: "circle-7",
       currentPlayerUserId: "b",
       pendingPenalty: { type: "pickThree", amount: 3, defendingNumber: 5 },
@@ -167,7 +167,7 @@ describe("Pick Three (5)", () => {
   it("still applies the initial Pick Three when stacking is disabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-5"], b: ["circle-3"] },
+      hands: { a: ["circle-5", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       rules: { pickThreeStacking: false },
@@ -181,7 +181,7 @@ describe("penalty mixing is rejected", () => {
   it("cannot defend a Pick Two with a 5", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-5"], b: ["circle-3"] },
+      hands: { a: ["circle-5", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       pendingPenalty: { type: "pickTwo", amount: 2, defendingNumber: 2 },
@@ -194,7 +194,7 @@ describe("penalty mixing is rejected", () => {
   it("cannot defend a Pick Three with a 2", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2"], b: ["circle-3"] },
+      hands: { a: ["circle-2", "square-10", "cross-10"], b: ["circle-3"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       pendingPenalty: { type: "pickThree", amount: 3, defendingNumber: 5 },
@@ -220,7 +220,7 @@ describe("penalty mixing is rejected", () => {
   it("must accept a Pick Two penalty when Pick Two stacking is disabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2"], b: ["circle-4"] },
+      hands: { a: ["circle-2", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       pendingPenalty: { type: "pickTwo", amount: 2, defendingNumber: 2 },

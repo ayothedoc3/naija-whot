@@ -80,7 +80,10 @@ test("selection order, middle removal, clearing, and Pick Six preview", async ({
   await contextB.close();
 });
 
-test("Last Card and Check Up previews use projected batch size", async ({ browser, page }) => {
+test("Last Card preview uses batch size and an empty hand wins automatically", async ({
+  browser,
+  page,
+}) => {
   const contextB = await browser.newContext();
   const pageB = await contextB.newPage();
   await startFixture(page, pageB, ["circle-3", "triangle-3", "cross-3", "circle-10"]);
@@ -102,8 +105,13 @@ test("Last Card and Check Up previews use projected batch size", async ({ browse
   await handCard(pageC, "circle-3").click();
   await handCard(pageC, "triangle-3").click();
   await handCard(pageC, "cross-3").click();
-  await expect(pageC.getByTestId("selection-summary")).toContainText("Check Up required");
-  await expect(pageC.getByRole("button", { name: "Check Up" })).toBeVisible();
+  await expect(pageC.getByTestId("selection-summary")).toContainText(
+    "This play finishes your hand",
+  );
+  await expect(pageC.getByRole("button", { name: "Check Up" })).toHaveCount(0);
+  await expect(pageC.getByRole("button", { name: "Last Card" })).toHaveCount(0);
+  await pageC.getByRole("button", { name: "Play 3 cards" }).click();
+  await expect(pageC.getByText(/wins the match!/).first()).toBeVisible();
 
   await contextC.close();
   await contextD.close();

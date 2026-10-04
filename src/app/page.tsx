@@ -193,8 +193,8 @@ export default function Home() {
         <ol className="list-decimal space-y-1 pl-5">
           <li>Match the shape or number of the top card, or play a Whot.</li>
           <li>Special cards trigger effects — Hold On, Pick Two, Suspension, and more.</li>
-          <li>Declare &quot;Last Card&quot; at one card left, and &quot;Check Up&quot; to win.</li>
-          <li>Empty your hand first (with a valid Check Up) to win the round.</li>
+          <li>Declare &quot;Last Card&quot; when a play leaves one card.</li>
+          <li>Empty your hand first with a valid play to win the round.</li>
         </ol>
       </section>
 

@@ -3,17 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import {
-  ArrowDownUp,
-  ArrowLeftRight,
-  Bookmark,
-  Flag,
-  Loader2,
-  Play,
-  ShieldCheck,
-  Undo2,
-  X,
-} from "lucide-react";
+import { ArrowDownUp, ArrowLeftRight, Bookmark, Flag, Loader2, Play, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { AudioControls } from "@/components/audio/audio-controls";
@@ -71,7 +61,6 @@ export function GameBoard({
   const [selectedCardIds, setSelectedCardIds] = useState<string[]>([]);
   const [pendingShapeSelection, setPendingShapeSelection] = useState(false);
   const [declareLastCard, setDeclareLastCard] = useState(false);
-  const [declareCheckUp, setDeclareCheckUp] = useState(false);
   const [reverseDirection, setReverseDirection] = useState(false);
   const [busy, setBusy] = useState(false);
   const [lastActionError, setLastActionError] = useState<string | null>(null);
@@ -248,7 +237,6 @@ export function GameBoard({
           setHand(data.hand);
           setSelectedCardIds([]);
           setDeclareLastCard(false);
-          setDeclareCheckUp(false);
           setReverseDirection(false);
           setLastActionError(null);
           return;
@@ -382,9 +370,7 @@ export function GameBoard({
     projectedHandCount,
     pendingPenalty: publicState.pendingPenalty,
     declareLastCard,
-    declareCheckUp,
     lastCardDeclaration: ruleConfig.lastCardDeclaration,
-    checkUpDeclaration: ruleConfig.checkUpDeclaration,
   });
 
   function toggleCard(card: WhotCard) {
@@ -413,7 +399,6 @@ export function GameBoard({
   function clearSelection() {
     setSelectedCardIds([]);
     setDeclareLastCard(false);
-    setDeclareCheckUp(false);
     setReverseDirection(false);
   }
 
@@ -439,7 +424,6 @@ export function GameBoard({
             cardIds: selectedCardIds,
             chosenShape,
             declareLastCard: projectedHandCount === 1 && declareLastCard,
-            declareCheckUp: projectedHandCount === 0 && declareCheckUp,
             reverseDirection,
           }
         : {
@@ -447,7 +431,6 @@ export function GameBoard({
             cardId: selectedCardIds[0],
             chosenShape,
             declareLastCard: projectedHandCount === 1 && declareLastCard,
-            declareCheckUp: projectedHandCount === 0 && declareCheckUp,
             reverseDirection,
           };
     setPendingShapeSelection(false);
@@ -455,7 +438,6 @@ export function GameBoard({
   }
 
   const showLastCardToggle = isMyTurn && ruleConfig.lastCardDeclaration && projectedHandCount === 1;
-  const showCheckUpToggle = isMyTurn && ruleConfig.checkUpDeclaration && projectedHandCount === 0;
   const showReverseToggle =
     isMyTurn &&
     ruleConfig.directionChangeOnPenalty &&
@@ -470,7 +452,6 @@ export function GameBoard({
     isMyTurn,
     pendingPenalty: publicState.pendingPenalty,
     showLastCardToggle,
-    showCheckUpToggle,
     topCard: publicState.topCard,
     activeShape: publicState.activeShape,
     currentPlayerName,
@@ -573,7 +554,6 @@ export function GameBoard({
             online={onlineUserIds.has(p.userId)}
             isSelf={false}
             lastCardDeclared={p.lastCardDeclared}
-            checkUpDeclared={p.checkUpDeclared}
             forfeited={p.forfeited}
           />
         ))}
@@ -662,16 +642,6 @@ export function GameBoard({
               className="gap-1 rounded-full"
             >
               <Bookmark className="size-3.5" /> Last Card
-            </Button>
-          )}
-          {showCheckUpToggle && (
-            <Button
-              size="sm"
-              variant={declareCheckUp ? "default" : "outline"}
-              onClick={() => setDeclareCheckUp((v) => !v)}
-              className="gap-1 rounded-full"
-            >
-              <ShieldCheck className="size-3.5" /> Check Up
             </Button>
           )}
           {showReverseToggle && (
@@ -781,7 +751,6 @@ export function GameBoard({
         <p className="text-center text-xs text-[#f8e7bc]/70">
           {myPlayer ? `You have ${myPlayer.handCount} cards` : null}
           {showLastCardToggle ? " - tap Last Card before playing down to one." : ""}
-          {showCheckUpToggle ? " - tap Check Up before playing your final card." : ""}
         </p>
       </section>
     </main>
@@ -844,17 +813,13 @@ function getSelectionPreview({
   projectedHandCount,
   pendingPenalty,
   declareLastCard,
-  declareCheckUp,
   lastCardDeclaration,
-  checkUpDeclaration,
 }: {
   selectedCards: WhotCard[];
   projectedHandCount: number;
   pendingPenalty: PublicGameState["pendingPenalty"];
   declareLastCard: boolean;
-  declareCheckUp: boolean;
   lastCardDeclaration: boolean;
-  checkUpDeclaration: boolean;
 }): string[] {
   if (selectedCards.length === 0) return [];
 
@@ -875,10 +840,8 @@ function getSelectionPreview({
 
   if (projectedHandCount === 1 && lastCardDeclaration) {
     preview.push(`1 card will remain — Last Card ${declareLastCard ? "armed" : "required"}`);
-  } else if (projectedHandCount === 0 && checkUpDeclaration) {
-    preview.push(
-      `This play finishes your hand — Check Up ${declareCheckUp ? "armed" : "required"}`,
-    );
+  } else if (projectedHandCount === 0) {
+    preview.push("This play finishes your hand");
   }
 
   return preview;
@@ -902,7 +865,6 @@ function getActionHint({
   isMyTurn,
   pendingPenalty,
   showLastCardToggle,
-  showCheckUpToggle,
   topCard,
   activeShape,
   currentPlayerName,
@@ -910,7 +872,6 @@ function getActionHint({
   isMyTurn: boolean;
   pendingPenalty: PublicGameState["pendingPenalty"];
   showLastCardToggle: boolean;
-  showCheckUpToggle: boolean;
   topCard: PublicGameState["topCard"];
   activeShape: Shape;
   currentPlayerName: string;
@@ -920,7 +881,6 @@ function getActionHint({
   if (pendingPenalty) {
     return `Defend with a ${pendingPenalty.defendingNumber}, or draw ${pendingPenalty.amount}.`;
   }
-  if (showCheckUpToggle) return "Tap Check Up before playing your final card.";
   if (showLastCardToggle) return "Tap Last Card before playing down to one card.";
   if (!topCard) return "Play a legal card or draw from the market.";
   return `Play a ${SHAPE_LABELS[activeShape]} card, a ${topCard.displayValue}, or Whot.`;
@@ -955,10 +915,6 @@ function announceEvent(
     case "last_card_penalty":
       sound.penalty();
       toast.warning(`${nameOf(payload.actorUserId)} forgot to declare Last Card — drew 2.`);
-      break;
-    case "check_up_penalty":
-      sound.penalty();
-      toast.warning(`${nameOf(payload.actorUserId)} forgot to declare Check Up — drew 2.`);
       break;
     case "penalty_applied":
       if (isMe(payload.targetUserId)) sound.penalty();

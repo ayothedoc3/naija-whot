@@ -107,7 +107,7 @@ describe("multi-card play", () => {
   it("compounds Pick Two by the number of 2s played together", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2", "triangle-2"], b: ["circle-4"] },
+      hands: { a: ["circle-2", "triangle-2", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
       rules: { multiCardPlay: true },
@@ -122,7 +122,7 @@ describe("multi-card play", () => {
   it("makes 2 + 2 + 2 a Pick Six", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2", "triangle-2", "star-2"], b: ["circle-4"] },
+      hands: { a: ["circle-2", "triangle-2", "star-2", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
       rules: { multiCardPlay: true },
@@ -137,7 +137,7 @@ describe("multi-card play", () => {
   it("compounds Pick Three by the number of 5s played together", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-5", "triangle-5"], b: ["circle-4"] },
+      hands: { a: ["circle-5", "triangle-5", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       rules: { multiCardPlay: true },
@@ -152,7 +152,7 @@ describe("multi-card play", () => {
   it("makes 5 + 5 a Pick Six", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-5", "triangle-5"], b: ["circle-4"] },
+      hands: { a: ["circle-5", "triangle-5", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       rules: { multiCardPlay: true },
@@ -180,7 +180,7 @@ describe("multi-card play", () => {
   it("applies Hold On once for a multi-card batch", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-1", "triangle-1"], b: ["circle-4"] },
+      hands: { a: ["circle-1", "triangle-1", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       rules: { multiCardPlay: true },
@@ -195,7 +195,11 @@ describe("multi-card play", () => {
   it("applies Suspension once for a multi-card batch", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b", "c"],
-      hands: { a: ["circle-8", "star-8"], b: ["circle-4"], c: ["circle-10"] },
+      hands: {
+        a: ["circle-8", "star-8", "square-10", "cross-10"],
+        b: ["circle-4"],
+        c: ["circle-10"],
+      },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       rules: { multiCardPlay: true },
@@ -210,7 +214,11 @@ describe("multi-card play", () => {
   it("applies General Market once for a multi-card batch", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b", "c"],
-      hands: { a: ["circle-14", "triangle-14"], b: ["circle-4"], c: ["circle-10"] },
+      hands: {
+        a: ["circle-14", "triangle-14", "square-10", "cross-10"],
+        b: ["circle-4"],
+        c: ["circle-10"],
+      },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       rules: { multiCardPlay: true },
@@ -227,7 +235,7 @@ describe("multi-card play", () => {
   it("allows multi-card defence during a pending Pick Two penalty", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2", "triangle-2"], b: ["circle-4"] },
+      hands: { a: ["circle-2", "triangle-2", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       pendingPenalty: { type: "pickTwo", amount: 2, defendingNumber: 2 },
@@ -243,7 +251,7 @@ describe("multi-card play", () => {
   it("rejects Pick Three cards during a pending Pick Two penalty", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-5", "triangle-5"], b: ["circle-4"] },
+      hands: { a: ["circle-5", "triangle-5", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       pendingPenalty: { type: "pickTwo", amount: 2, defendingNumber: 2 },
@@ -260,7 +268,7 @@ describe("multi-card play", () => {
   it("rejects Pick Two cards during a pending Pick Three penalty", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2", "triangle-2"], b: ["circle-4"] },
+      hands: { a: ["circle-2", "triangle-2", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       pendingPenalty: { type: "pickThree", amount: 3, defendingNumber: 5 },
@@ -277,7 +285,7 @@ describe("multi-card play", () => {
   it("forces drawing instead of defending when Pick Two stacking is disabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-2", "triangle-2"], b: ["circle-4"] },
+      hands: { a: ["circle-2", "triangle-2", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       pendingPenalty: { type: "pickTwo", amount: 2, defendingNumber: 2 },
@@ -294,7 +302,7 @@ describe("multi-card play", () => {
   it("forces drawing instead of defending when Pick Three stacking is disabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-5", "triangle-5"], b: ["circle-4"] },
+      hands: { a: ["circle-5", "triangle-5", "square-10", "cross-10"], b: ["circle-4"] },
       topCardId: "circle-7",
       currentPlayerUserId: "a",
       pendingPenalty: { type: "pickThree", amount: 3, defendingNumber: 5 },
@@ -339,7 +347,7 @@ describe("multi-card play", () => {
     expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(3);
   });
 
-  it("checks Check Up after the entire batch is removed", () => {
+  it("accepts an old client's Check Up flag on a winning batch", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
       hands: { a: ["circle-3", "triangle-3"], b: ["circle-4"] },
@@ -355,7 +363,7 @@ describe("multi-card play", () => {
     expect(next.status).toBe("match_over");
   });
 
-  it("prevents a batch win when Check Up is missing", () => {
+  it("wins automatically when the entire batch empties the hand", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
       hands: { a: ["circle-3", "triangle-3"], b: ["circle-4"] },
@@ -367,11 +375,12 @@ describe("multi-card play", () => {
       type: "play_multi",
       cardIds: ["circle-3", "triangle-3"],
     });
-    expect(next.status).toBe("in_progress");
-    expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(2);
+    expect(next.status).toBe("match_over");
+    expect(next.roundWinnerUserId).toBe("a");
+    expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(0);
   });
 
-  it("requires Check Up, not Last Card, when a batch empties the hand", () => {
+  it("does not apply either declaration penalty when a batch empties the hand", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
       hands: { a: ["circle-3", "triangle-3"], b: ["circle-4"] },
@@ -387,9 +396,9 @@ describe("multi-card play", () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     const next = result.state;
-    expect(next.status).toBe("in_progress");
-    expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(2);
-    expect(result.events.map((event) => event.type)).toContain("check_up_penalty");
+    expect(next.status).toBe("match_over");
+    expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(0);
+    expect(result.events.map((event) => event.type)).not.toContain("check_up_penalty");
     expect(result.events.map((event) => event.type)).not.toContain("last_card_penalty");
   });
 

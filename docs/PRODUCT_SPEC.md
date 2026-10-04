@@ -52,7 +52,6 @@ app — installable PWA only.
 | Hold On                            | on/off                       | on      |
 | Suspension                         | on/off                       | on      |
 | Last Card declaration              | on/off                       | on      |
-| Check Up declaration               | on/off                       | on      |
 | Multi-card play                    | on/off                       | off     |
 | Direction change on Pick Two/Three | on/off                       | off     |
 | Best-of                            | 1 / 3 / 5                    | 1       |

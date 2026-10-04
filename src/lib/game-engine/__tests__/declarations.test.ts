@@ -69,7 +69,20 @@ describe("Last Card declaration", () => {
   });
 });
 
-describe("Check Up declaration", () => {
+describe("Automatic final-card wins", () => {
+  it("rejects the retired declaration action even in an old saved game", () => {
+    const state = craftInProgressState({
+      seatUserIds: ["a", "b"],
+      hands: { a: ["circle-3"], b: ["circle-4"] },
+      topCardId: "circle-5",
+      currentPlayerUserId: "a",
+    });
+    state.ruleConfig.checkUpDeclaration = true;
+    const result = act(state, "a", { type: "declare_check_up" });
+    expect(result.ok).toBe(false);
+    if (!result.ok) expect(result.error.code).toBe("RULE_DISABLED");
+  });
+
   it("wins the round when declared and the final move is valid", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
@@ -87,17 +100,18 @@ describe("Check Up declaration", () => {
     expect(next.matchWinnerUserId).toBe("a");
   });
 
-  it("draws two cards and continues the round when Check Up was omitted", () => {
+  it("wins without Check Up even when a saved game has the old rule enabled", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
       hands: { a: ["circle-3"], b: ["circle-4"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
+    state.ruleConfig.checkUpDeclaration = true;
     const next = actOrThrow(state, "a", { type: "play_card", cardId: "circle-3" });
-    expect(next.status).toBe("in_progress");
-    expect(next.roundWinnerUserId).toBeNull();
-    expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(2);
+    expect(next.status).toBe("match_over");
+    expect(next.roundWinnerUserId).toBe("a");
+    expect(next.players.find((p) => p.userId === "a")?.hand).toHaveLength(0);
   });
 
   it("wins immediately with no declaration required when the rule is disabled", () => {
@@ -113,17 +127,15 @@ describe("Check Up declaration", () => {
     expect(next.roundWinnerUserId).toBe("a");
   });
 
-  it("does not declare a winner before validating the declaration, even on the winning move", () => {
+  it("does not declare a winner for an illegal final-card play", () => {
     const state = craftInProgressState({
       seatUserIds: ["a", "b"],
-      hands: { a: ["circle-3"], b: ["circle-4"] },
+      hands: { a: ["triangle-3"], b: ["circle-4"] },
       topCardId: "circle-5",
       currentPlayerUserId: "a",
     });
-    const result = act(state, "a", { type: "play_card", cardId: "circle-3" });
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.state.matchWinnerUserId).toBeNull();
-    }
+    const result = act(state, "a", { type: "play_card", cardId: "triangle-3" });
+    expect(result.ok).toBe(false);
+    expect(state.matchWinnerUserId).toBeNull();
   });
 });

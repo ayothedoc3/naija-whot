@@ -43,7 +43,7 @@ export default function RulesPage() {
           <h1 className="font-heading text-4xl font-black sm:text-5xl">How to Play Naija Whot</h1>
           <p className="text-muted-foreground max-w-2xl text-base">
             Match the top card by shape or number, use special cards wisely, and declare Last Card
-            and Check Up at the right time.
+            at the right time.
           </p>
         </header>
 
@@ -126,10 +126,7 @@ export default function RulesPage() {
                 Last Card must be activated before playing from 2 cards down to exactly 1 card.
                 Missing it draws 2 cards immediately.
               </p>
-              <p>
-                Check Up must be activated on the play that empties your hand. Missing it draws 2
-                cards and the round continues.
-              </p>
+              <p>A valid play that empties your hand wins the round automatically.</p>
             </div>
           </RulesSection>
         </section>

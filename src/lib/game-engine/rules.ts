@@ -11,6 +11,7 @@ export interface RuleConfig {
   holdOn: boolean;
   suspension: boolean;
   lastCardDeclaration: boolean;
+  /** Deprecated persisted field. Final valid plays always win without a declaration. */
   checkUpDeclaration: boolean;
   multiCardPlay: boolean;
   directionChangeOnPenalty: boolean;
@@ -39,7 +40,7 @@ export const DEFAULT_RULE_CONFIG: RuleConfig = {
   holdOn: true,
   suspension: true,
   lastCardDeclaration: true,
-  checkUpDeclaration: true,
+  checkUpDeclaration: false,
   multiCardPlay: false,
   directionChangeOnPenalty: false,
   bestOf: 1,
@@ -49,6 +50,7 @@ export function normalizeRuleConfig(config: LegacyRuleConfig | null | undefined)
   const merged = { ...DEFAULT_RULE_CONFIG, ...(config ?? {}) };
   return {
     ...merged,
+    checkUpDeclaration: false,
     multiCardPlay:
       config?.multiCardPlay ?? config?.doubleDecking ?? DEFAULT_RULE_CONFIG.multiCardPlay,
   };

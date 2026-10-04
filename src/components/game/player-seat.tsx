@@ -1,4 +1,4 @@
-import { Bookmark, Crown, ShieldCheck, Wifi, WifiOff } from "lucide-react";
+import { Bookmark, Crown, Wifi, WifiOff } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { CardBack } from "./card-back";
@@ -10,7 +10,6 @@ export function PlayerSeat({
   online,
   isSelf,
   lastCardDeclared,
-  checkUpDeclared,
   forfeited,
 }: {
   displayName: string;
@@ -19,7 +18,6 @@ export function PlayerSeat({
   online: boolean;
   isSelf: boolean;
   lastCardDeclared: boolean;
-  checkUpDeclared: boolean;
   forfeited: boolean;
 }) {
   return (
@@ -55,11 +53,6 @@ export function PlayerSeat({
         {lastCardDeclared && (
           <Badge variant="secondary" className="gap-0.5 bg-[#f6dfaa] text-[10px] text-[#31170f]">
             <Bookmark className="size-2.5" /> Last Card
-          </Badge>
-        )}
-        {checkUpDeclared && (
-          <Badge variant="secondary" className="gap-0.5 bg-[#f6dfaa] text-[10px] text-[#31170f]">
-            <ShieldCheck className="size-2.5" /> Check Up
           </Badge>
         )}
       </div>

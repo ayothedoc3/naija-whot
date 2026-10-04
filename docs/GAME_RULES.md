@@ -62,10 +62,8 @@ none does today.
 - **Last Card:** required when a move takes a player from 2 cards to 1. Must
   be flagged in the same action as the move. If omitted, the server applies a
   2-card penalty after the move — the move itself still stands.
-- **Check Up:** required when playing the final card. If declared and the
-  move is valid, the round is won only after the server has validated the
-  declaration and applied every card effect; if omitted, the server draws 2
-  cards for that player and the round continues.
+- A valid play that empties the hand wins automatically. No final-card
+  declaration is required, including when a multi-card batch empties the hand.
 
 ## Multi-card play (off by default)
 

@@ -129,11 +129,6 @@ export const HOUSE_RULE_OPTIONS: {
     description: "A player moving from 2 cards to 1 must declare Last Card or draw 2.",
   },
   {
-    key: "checkUpDeclaration",
-    label: "Check Up",
-    description: "A player playing their final card must declare Check Up or draw 2 and continue.",
-  },
-  {
     key: "multiCardPlay",
     label: "Multi-card play",
     description: "Allows several cards of the same number to be played in one atomic turn.",
@@ -151,7 +146,7 @@ export const ONBOARDING_STEPS = [
   "Share the invite link.",
   "Mark ready before the host starts.",
   "Match by shape or number, or play Whot.",
-  "Use Last Card and Check Up at the correct time.",
+  "Declare Last Card when a play leaves one card. Empty your hand to win.",
 ] as const;
 
 export function describeSettingValue(settings: RuleConfig, key: keyof RuleConfig): string {

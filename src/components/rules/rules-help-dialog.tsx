@@ -110,10 +110,7 @@ export function RulesHelpDialog({ settings, publicState, triggerClassName }: Rul
             Last Card is needed before a play that leaves you with exactly 1 card. Missing it draws
             2 cards.
           </p>
-          <p>
-            Check Up is needed on the play that empties your hand. Missing it draws 2 cards and the
-            round continues.
-          </p>
+          <p>A valid play that empties your hand wins the round automatically.</p>
         </section>
 
         <Link href="/rules" className={cn(buttonVariants({ variant: "outline" }))}>

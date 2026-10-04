@@ -377,7 +377,9 @@ export function RoomClient({ code }: { code: string }) {
           <li>Share the invite link with friends.</li>
           <li>Non-host players mark ready.</li>
           <li>The host starts when everyone is ready.</li>
-          <li>Match by shape or number, then use Last Card and Check Up on time.</li>
+          <li>
+            Match by shape or number, declare Last Card at one card, and empty your hand to win.
+          </li>
         </ol>
       </section>
 
@@ -496,7 +498,6 @@ function RuleSummary({ settings }: { settings: RuleConfig }) {
     settings.holdOn && "Hold On",
     settings.suspension && "Suspension",
     settings.lastCardDeclaration && "Last Card",
-    settings.checkUpDeclaration && "Check Up",
     settings.multiCardPlay && "Multi-card play",
     settings.directionChangeOnPenalty && "Direction change",
   ].filter(Boolean) as string[];

@@ -26,7 +26,6 @@ import { findCardInHand, isActionAllowedForStatus, isCardPlayable } from "./vali
 const MAX_RECENT_ACTION_IDS = 200;
 const LAST_CARD_HAND_SIZE = 1;
 const LAST_CARD_PENALTY = 2;
-const CHECK_UP_PENALTY = 2;
 
 export interface CreateGameStateParams {
   gameId: string;
@@ -124,7 +123,6 @@ export function applyAction(
           [action.cardId],
           action.chosenShape,
           action.declareLastCard,
-          action.declareCheckUp,
           action.reverseDirection,
         );
         break;
@@ -137,7 +135,6 @@ export function applyAction(
           action.cardIds,
           action.chosenShape,
           action.declareLastCard,
-          action.declareCheckUp,
           action.reverseDirection,
         );
         break;
@@ -151,8 +148,7 @@ export function applyAction(
         handleDeclareLastCard(draft, ctx, events);
         break;
       case "declare_check_up":
-        handleDeclareCheckUp(draft, ctx, events);
-        break;
+        throw gameError("RULE_DISABLED", "Check Up is no longer required.");
       case "leave_game":
         handleLeaveGame(draft, ctx, events);
         break;
@@ -366,7 +362,6 @@ function handlePlay(
   cardIds: string[],
   chosenShape: RequestableShape | undefined,
   declareLastCard: boolean | undefined,
-  declareCheckUp: boolean | undefined,
   reverseDirection: boolean | undefined,
 ): void {
   const player = requireCurrentPlayer(draft, ctx.actingUserId);
@@ -472,7 +467,6 @@ function handlePlay(
   }
 
   if (declareLastCard) player.lastCardArmed = true;
-  if (declareCheckUp) player.checkUpArmed = true;
 
   if (player.hand.length === LAST_CARD_HAND_SIZE) {
     if (draft.ruleConfig.lastCardDeclaration) {
@@ -486,18 +480,8 @@ function handlePlay(
 
   let roundEnded = false;
   if (player.hand.length === 0) {
-    if (draft.ruleConfig.checkUpDeclaration) {
-      if (player.checkUpArmed) {
-        finishRound(draft, ctx.actingUserId, events);
-        roundEnded = true;
-      } else {
-        drawCardsInto(draft, player, CHECK_UP_PENALTY, shuffle, events);
-        events.push({ type: "check_up_penalty", actorUserId: ctx.actingUserId });
-      }
-    } else {
-      finishRound(draft, ctx.actingUserId, events);
-      roundEnded = true;
-    }
+    finishRound(draft, ctx.actingUserId, events);
+    roundEnded = true;
     player.checkUpArmed = false;
   }
 
@@ -648,15 +632,6 @@ function handleDeclareLastCard(draft: GameState, ctx: ActionContext, events: Gam
   const player = requireCurrentPlayer(draft, ctx.actingUserId);
   player.lastCardArmed = true;
   events.push({ type: "last_card_declared", actorUserId: ctx.actingUserId });
-}
-
-function handleDeclareCheckUp(draft: GameState, ctx: ActionContext, events: GameEvent[]): void {
-  if (!draft.ruleConfig.checkUpDeclaration) {
-    throw gameError("RULE_DISABLED", "Check Up declaration is disabled in this room.");
-  }
-  const player = requireCurrentPlayer(draft, ctx.actingUserId);
-  player.checkUpArmed = true;
-  events.push({ type: "check_up_declared", actorUserId: ctx.actingUserId });
 }
 
 function handleLeaveGame(draft: GameState, ctx: ActionContext, events: GameEvent[]): void {
