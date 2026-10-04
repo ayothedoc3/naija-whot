@@ -9,7 +9,7 @@ WORKDIR /app
 # package.json pins the exact pnpm version via "packageManager"; corepack
 # resolves and uses it automatically on the first `pnpm` invocation.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
-RUN pnpm install --frozen-lockfile
+RUN NODE_OPTIONS="--max-old-space-size=512" pnpm install --frozen-lockfile --network-concurrency=4 --child-concurrency=1
 
 # ── builder: compile Next.js with build-time env vars ────────────────────────
 FROM base AS builder
@@ -35,7 +35,8 @@ ENV NEXT_PUBLIC_ENABLE_DEV_FIXTURES=$NEXT_PUBLIC_ENABLE_DEV_FIXTURES
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN pnpm build
+# Keep builds within the memory available on the shared Coolify server.
+RUN NODE_OPTIONS="--max-old-space-size=1024" NEXT_BUILD_CPUS=1 RAYON_NUM_THREADS=1 pnpm build
 
 # ── runner: minimal production image ─────────────────────────────────────────
 FROM node:22-slim AS runner
