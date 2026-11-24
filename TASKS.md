@@ -250,3 +250,11 @@ build`'s page-data-collection step imports every route module (without invoking 
 See the final response in-conversation for the honest completion status of each item above,
 including anything that could not be verified without user-provided credentials (hosted Supabase
 project, Coolify instance, custom domain).
+
+## Ecosystem (Oya!) roadmap
+
+The plan for growing this game into a couples hub with more games lives in
+`docs/ECOSYSTEM_PLAN.md`. Milestones M1 onward are tracked there.
+
+- [x] M0: restore background music asset, add ecosystem plan
+- [ ] M1: activity interface and Whot adapter
