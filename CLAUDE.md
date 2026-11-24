@@ -49,6 +49,9 @@ e2e/                   Playwright multi-browser-context tests.
 docs/                  Product, rules, architecture, database, security, deployment docs.
 ```
 
+The roadmap for extending this game into a multi-game couples hub is in
+`docs/ECOSYSTEM_PLAN.md`. Read it before starting any new activity or game.
+
 ## Working process for this project
 
 - Keep rule logic out of React components — if you're writing an `if` about
